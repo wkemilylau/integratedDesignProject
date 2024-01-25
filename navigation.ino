@@ -24,10 +24,14 @@ int valRight = digitalRead(linerightPin); // read right input value
 int valSideRight = digitalRead(lineSideRightPin); // read side right input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
+int count = 0;    // for testing, count number of junctions
+int* countPtr = &count;
+
 // Set speed constants
-const int HighSpeed = 150;
-const int NormalSpeed = 100;
-const int LowSpeed = 0;
+const int HighSpeed = 150;            // adjustment on straight line
+const int NormalSpeed = 100;          // straight line
+const int LowSpeed = 0;               // adjustment on straight line
+const int RotationSpeed = 100;        // rotation
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
@@ -75,6 +79,49 @@ void updateleftmotorspeed(int NewLeftMotorSpeed) {    // update left motor speed
   }
 }
 
+void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 1 character
+                                              // Direction == "R" means turn right
+    updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
+    updaterightmotorspeed(RotationSpeed);
+    
+    if (Direction == "R") {
+      motor_left->run(FORWARD);
+      motor_right->run(BACKWARD);
+    } else if (Direction == "L") {
+      motor_left->run(BACKWARD);
+      motor_right->run(FORWARD);
+    } else {
+      motor_left->run(FORWARD);
+      motor_right->run(FORWARD);
+      return;
+    }
+    
+    // rotate until both of the front sensors detect the side branch
+    while (valLeft == 1 || valRight == 1) {    // rotate until front sensors are both black
+      Serial.println("Rotating until front sensors are both black");
+
+      valLeft = digitalRead(lineleftPin); // read left input value
+      valRight = digitalRead(linerightPin); // read right input value
+      delay(5);
+    }
+
+    while (valLeft == 0 || valRight == 0) {   // rotate until front sensors are both white
+      Serial.println("Rotating until front sensors are both white");
+      valLeft = digitalRead(lineleftPin); // read left input value
+      valRight = digitalRead(linerightPin); // read right input value
+      delay(5);
+    }
+
+    motor_left->run(FORWARD);
+    motor_right->run(FORWARD);
+    updateleftmotorspeed(0);
+    updaterightmotorspeed(0);
+    delay(1000);
+
+    Serial.println("Arrived side branch");
+    *countPtr += 1;
+}
+
 void loop() {
   valLeft = digitalRead(lineleftPin); // read left input value
   valRight = digitalRead(linerightPin); // read right input value
@@ -106,51 +153,28 @@ void loop() {
     Serial.println(*LeftMotorSpeedPter);
 
   } else { // both black
-    Serial.println("almost arrive junction");            // should be close to a junction, slow down
-    motor_left->run(FORWARD);
-    motor_right->run(FORWARD);
-    updateleftmotorspeed(NormalSpeed);
-    updaterightmotorspeed(NormalSpeed);
-    Serial.println(*LeftMotorSpeedPter);
-    Serial.println(0);
-
+      if (*countPtr == 2) {
+        updateleftmotorspeed(0);
+        updaterightmotorspeed(0);
+      } else {
+        Serial.println("almost arrive junction");            // should be close to a junction, slow down
+        motor_left->run(FORWARD);
+        motor_right->run(FORWARD);
+        updateleftmotorspeed(NormalSpeed);
+        updaterightmotorspeed(NormalSpeed);
+        Serial.println(*LeftMotorSpeedPter);
+        Serial.println(0);
+      }
   }
 
   if(valSideRight == 1){ // white branch on the right
     Serial.println("Branch on the right, turn right");
     
-    // rotate until both of the front sensors detect the side branch
-    // before rotation, front sensors can detect white or black depending on the shape of the junction
-    while (valLeft == 1 || valRight == 1) {    // rotate until front sensors are both black
-      Serial.println("Rotating until front sensors are both black");
-      motor_left->run(FORWARD);
-      motor_right->run(BACKWARD);
-      updateleftmotorspeed(100);      // set constant rotate speed
-      updaterightmotorspeed(100);
-      valLeft = digitalRead(lineleftPin); // read left input value
-      valRight = digitalRead(linerightPin); // read right input value
-      delay(5);
+    if (count == 0) {
+      junctionrotation("L");
+    } else if (count == 1) {
+      junctionrotation("R");
     }
-
-    while (valLeft == 0 || valRight == 0) {   // rotate until front sensors are both white
-      Serial.println("Rotating until front sensors are both white");
-      motor_left->run(FORWARD);
-      motor_right->run(BACKWARD);
-      updateleftmotorspeed(100);
-      updaterightmotorspeed(100);
-      valLeft = digitalRead(lineleftPin); // read left input value
-      valRight = digitalRead(linerightPin); // read right input value
-      delay(5);
-    }
-
-    motor_left->run(FORWARD);
-    motor_right->run(FORWARD);
-    updateleftmotorspeed(0);
-    updaterightmotorspeed(0);
-    delay(1000);
-
-    Serial.println("Arrived side branch");
-
     
   }
 
