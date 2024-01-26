@@ -24,8 +24,6 @@ int valRight = digitalRead(linerightPin); // read right input value
 int valSideRight = digitalRead(lineSideRightPin); // read side right input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
-int count = 0;    // for testing, count number of junctions
-int* countPtr = &count;
 
 // Set speed constants
 const int HighSpeed = 150;            // adjustment on straight line
@@ -80,17 +78,20 @@ void updateleftmotorspeed(int NewLeftMotorSpeed) {    // update left motor speed
 }
 
 void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 1 character
-                                              // Direction == "R" means turn right
+                                              // Direction == "R" means turn right, "L" means left, "S" (or other char) means straight line
+    Serial.println("start to rotate");
+    
     updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
     updaterightmotorspeed(RotationSpeed);
     
-    if (Direction == "R") {
+    if (Direction == 'R') {
       motor_left->run(FORWARD);
       motor_right->run(BACKWARD);
-    } else if (Direction == "L") {
+    } else if (Direction == 'L') {
       motor_left->run(BACKWARD);
       motor_right->run(FORWARD);
     } else {
+      Serial.println("BAD INPUT");
       motor_left->run(FORWARD);
       motor_right->run(FORWARD);
       return;
@@ -112,6 +113,7 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
       delay(5);
     }
 
+    valSideRight = digitalRead(lineSideRightPin); // read side right input value
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     updateleftmotorspeed(0);
@@ -119,17 +121,22 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
     delay(1000);
 
     Serial.println("Arrived side branch");
-    *countPtr += 1;
+
 }
 
-void loop() {
+void stopmoving() {
+  updateleftmotorspeed(0);
+  updaterightmotorspeed(0);
+  delay(1000);
+}
+
+void gostraight() {   // walk in straight line 
   valLeft = digitalRead(lineleftPin); // read left input value
   valRight = digitalRead(linerightPin); // read right input value
   valSideRight = digitalRead(lineSideRightPin); // read side right input value
 
   if(valLeft == 1 && valRight == 1) { // both white
-    Serial.println("Go straight");
-
+    // Serial.println("Go straight");
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     updateleftmotorspeed(NormalSpeed);
@@ -137,7 +144,7 @@ void loop() {
     Serial.println(*LeftMotorSpeedPter);
 
   } else if(valLeft == 0 && valRight == 1) { // left is black right is white
-    Serial.println("Turn right");
+    // Serial.println("Turn right");
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     updateleftmotorspeed(HighSpeed);
@@ -145,7 +152,7 @@ void loop() {
     Serial.println(*LeftMotorSpeedPter);
 
   } else if(valLeft == 1 && valRight == 0) { // left is white right is black
-    Serial.println("Turn left");
+    // Serial.println("Turn left");
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     updateleftmotorspeed(LowSpeed);
@@ -153,31 +160,45 @@ void loop() {
     Serial.println(*LeftMotorSpeedPter);
 
   } else { // both black
-      if (*countPtr == 2) {
-        updateleftmotorspeed(0);
-        updaterightmotorspeed(0);
-      } else {
-        Serial.println("almost arrive junction");            // should be close to a junction, slow down
-        motor_left->run(FORWARD);
-        motor_right->run(FORWARD);
-        updateleftmotorspeed(NormalSpeed);
-        updaterightmotorspeed(NormalSpeed);
-        Serial.println(*LeftMotorSpeedPter);
-        Serial.println(0);
-      }
+    motor_left->run(FORWARD);
+    motor_right->run(FORWARD);
+    updateleftmotorspeed(NormalSpeed);
+    updaterightmotorspeed(NormalSpeed);
   }
+  delay(10);        // we need delay for the motor to respond
+}
 
-  if(valSideRight == 1){ // white branch on the right
-    Serial.println("Branch on the right, turn right");
+void routefollow(const char route[], int size) {
+  
+  for (int currentJunction = 0; currentJunction < size; currentJunction++) {
     
-    if (count == 0) {
-      junctionrotation("L");
-    } else if (count == 1) {
-      junctionrotation("R");
+    while (valSideRight == 0) {                     // go to junction
+      gostraight();
     }
-    
+    stopmoving();
+
+    Serial.println("current junction");
+    Serial.println(route[currentJunction]);
+    junctionrotation(route[currentJunction]);       // arrives junction, rotate
+
+    // increment currentJunction counter
   }
 
-  delay(10);
+  while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
+    gostraight();                                   
+  }
+  stopmoving();
+    
+
+}
+
+void loop() {
+
+  char testroute[3] = "LR";
+  int size = sizeof(testroute) / sizeof(testroute[0]) - 1;
+  routefollow(testroute, size);
+
+
+  delay(100000);
 }
 
