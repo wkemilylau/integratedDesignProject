@@ -90,11 +90,18 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
     } else if (Direction == 'L') {
       motor_left->run(BACKWARD);
       motor_right->run(FORWARD);
-    } else {
-      Serial.println("BAD INPUT");
+    } else if (Direction == 'S') {
       motor_left->run(FORWARD);
       motor_right->run(FORWARD);
+      while (valSideRight == 1) {
+        gostraight();
+      }
       return;
+    } else {
+      Serial.println("BAD INPUT");
+      while (1) {
+        stopmoving();
+      }
     }
     
     // rotate until both of the front sensors detect the side branch
@@ -194,7 +201,7 @@ void routefollow(const char route[], int size) {
 
 void loop() {
 
-  char testroute[3] = "LR";
+  char testroute[3] = "SH";                         // in C++, size of char = number of letters + 1
   int size = sizeof(testroute) / sizeof(testroute[0]) - 1;
   routefollow(testroute, size);
 
