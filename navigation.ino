@@ -116,6 +116,9 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
         gostraight();
       }
       return;
+    } else if (Direction == '\0'){    // reaches the end (null terminator) of the input character // NOT SURE IF ITS CORRECT
+      stopmoving();       
+      return;
     } else {
       Serial.println("BAD INPUT");
       while (1) {
@@ -214,6 +217,7 @@ void routefollow(const char route[], int numberOfJunctions) {
   while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
     gostraight();                                   
   } 
+  delay(200);                                       // make sure it goes further away from the white line
   //
 
   stopmoving(); 
@@ -224,13 +228,17 @@ void routefollow(const char route[], int numberOfJunctions) {
 void loop() {
   // in C++, size of char = number of letters + 1
 
-
-
-  char testroute[3] = "SH";                                                     // start to block 1   
-
-  int numberOfJunctions = sizeof(testroute) / sizeof(testroute[0]) - 1;
-  routefollow(testroute, numberOfJunctions);
-
+  // int blockNumber = 0;
+  // int notPickup = -1;
+  // int blockType = -1;
+  routefollow("LR", 2);
+  junctionrotation('R');
+  for (int routePtr = 0; routePtr < 16; routePtr = routePtr + 2) {
+    //int routePtr = (blockNumber - 1) * 4 + notPickup * 2 + blockType;
+    int numberOfJunctions = sizeof(routes[routePtr]) / sizeof(routes[routePtr][0]) - 1;
+    routefollow(routes[routePtr], numberOfJunctions);
+    junctionrotation('R');
+  }
 
   delay(100000);
 }
