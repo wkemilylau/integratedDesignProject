@@ -24,6 +24,25 @@ int valRight = digitalRead(linerightPin); // read right input value
 int valSideRight = digitalRead(lineSideRightPin); // read side right input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
+// array of routes; does not include backing out in free space; does not include U-turns after picking block up in line area
+char routes[16][6] = {           
+          "RL",               // 0: block 1 to green
+          "LSR",              // 1: block 1 to red
+          "SRSR",             // 2: green to block 2
+          "SLL",              // 3: red to block 2
+          "LSLS",             // 4: block 2 to green
+          "RRS",              // 5: block 2 to red
+          "SSS",              // 6: green to block 3
+          "SLSRR",            // 7: red to block 3
+          "RSSLS",            // 8: block 3 to green
+          "SS",               // 9: block 3 to red
+          "SSR",              // 10: green to block 4
+          "SSL",              // 11: red to block 4
+          "RLS",              // 12: block 4 to green
+          "LSRS",             // 13: block 4 to red
+          "RSR",              // 14: green to finish
+          "LL"};              // 15: red to finish
+
 
 // Set speed constants
 const int HighSpeed = 150;            // adjustment on straight line
@@ -175,9 +194,9 @@ void gostraight() {   // walk in straight line
   delay(10);        // we need delay for the motor to respond
 }
 
-void routefollow(const char route[], int size) {
+void routefollow(const char route[], int numberOfJunctions) {
   
-  for (int currentJunction = 0; currentJunction < size; currentJunction++) {
+  for (int currentJunction = 0; currentJunction < numberOfJunctions; currentJunction++) {
     
     while (valSideRight == 0) {                     // go to junction
       gostraight();
@@ -191,19 +210,26 @@ void routefollow(const char route[], int size) {
     // increment currentJunction counter
   }
 
+  // if not in open area indicated by flag:
   while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
     gostraight();                                   
-  }
-  stopmoving();
+  } 
+  //
+
+  stopmoving(); 
     
 
 }
 
 void loop() {
+  // in C++, size of char = number of letters + 1
 
-  char testroute[3] = "SH";                         // in C++, size of char = number of letters + 1
-  int size = sizeof(testroute) / sizeof(testroute[0]) - 1;
-  routefollow(testroute, size);
+
+
+  char testroute[3] = "SH";                                                     // start to block 1   
+
+  int numberOfJunctions = sizeof(testroute) / sizeof(testroute[0]) - 1;
+  routefollow(testroute, numberOfJunctions);
 
 
   delay(100000);
