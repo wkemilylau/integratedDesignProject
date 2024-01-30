@@ -9,6 +9,11 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *motor_right = AFMS.getMotor(1);
 Adafruit_DCMotor *motor_left = AFMS.getMotor(2);
 
+// Global flags for status
+int blockNumber = 0;
+int notPickup = -1;
+int blockType = 0;    // all green for testing
+
 // Global flags for motor status
 int RightMotorSpeed = 0;
 int* RightMotorSpeedPter = &RightMotorSpeed;
@@ -30,7 +35,7 @@ char routes[16][6] = {
 
   // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
 
-          "RL",               // 0: block 1 to green
+          "RL",               // 0: block 1 to green 
           "LSR",              // 1: block 1 to red
           "SRSR",             // 2: green to block 2
           "SLL",              // 3: red to block 2
@@ -46,6 +51,7 @@ char routes[16][6] = {
           "LSRS",             // 13: block 4 to red
           "RSR",              // 14: green to finish
           "LL"};              // 15: red to finish
+      // no need junctionrotation('R') (u turn): 
 
   // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
 
@@ -53,13 +59,16 @@ char routes[16][6] = {
 int sizeOfRoutes[16] = {2,3,4,3,4,3,3,5,5,2,3,3,3,4,3,2};
 
 // Set speed constants
-const int HighSpeed = 150;            // adjustment on straight line
-const int NormalSpeed = 100;          // straight line
-const int LowSpeed = 0;               // adjustment on straight line
-const int RotationSpeed = 100;        // rotation
+const int HighSpeed = 250;            // adjustment on straight line
+const int NormalSpeed = 200;          // straight line
+const int LowSpeed = 50;               // adjustment on straight line
+const int RotationSpeed = 180;        // rotation
 
 // Junction to outpost (green red area) time in milliseconds
 int junctionOutpostTime = 250 / NormalSpeed * 1000; // change arbitrary constant '400' // Higher normal speed means shorter time 
+
+// Junction to finish box time in milliseconds
+int junctionFinishTime = 550 / NormalSpeed * 1000;
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
@@ -156,9 +165,8 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
     valSideRight = digitalRead(lineSideRightPin); // read side right input value
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
-    updateleftmotorspeed(0);
-    updaterightmotorspeed(0);
-    delay(1000);
+    stopmoving();
+    delay(300);
 
     Serial.println("Arrived side branch");
 
@@ -167,7 +175,7 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
 void stopmoving() {
   updateleftmotorspeed(0);
   updaterightmotorspeed(0);
-  delay(1000);
+  delay(300);
 }
 
 void gostraight() {   // walk in straight line 
@@ -208,6 +216,16 @@ void gostraight() {   // walk in straight line
   delay(10);        // we need delay for the motor to respond
 }
 
+void forwardawhile(int time) {
+    unsigned long currentMillis = millis();
+    unsigned long startMillis = millis();
+    while((currentMillis - startMillis) < time) {
+      currentMillis = millis();
+      gostraight();
+    }
+    stopmoving(); 
+}
+
 void routefollow(const char route[], int numberOfJunctions) {
   
   for (int currentJunction = 0; currentJunction < numberOfJunctions; currentJunction++) {
@@ -215,6 +233,7 @@ void routefollow(const char route[], int numberOfJunctions) {
     while (valSideRight == 0) {                     // go to junction
       gostraight();
     }
+    delay(50);                                      // make sure the front sensors are sufficiently far away from junction
     stopmoving();
 
     Serial.println("current junction");
@@ -224,24 +243,24 @@ void routefollow(const char route[], int numberOfJunctions) {
     // increment currentJunction counter
   }
 
-  if (1) {
-    // walk for fixed time
-    unsigned long currentMillis = millis();
-    unsigned long startMillis = millis();
-    while((currentMillis - startMillis) < junctionOutpostTime) {
-      currentMillis = millis();
-      gostraight();
-    }
-    stopmoving();
-  // } else if (/* open area */) {
-  //   // return
-  // } else if (/* line following area pick up block */) {
-  //   // search for end of line
-  //   while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
-  //     gostraight();                                   
-  //   } 
-  //   delay(200);                                       // make sure it goes further away from the white line
-  //   stopmoving(); 
+  if (!notPickup) {
+    forwardawhile(junctionOutpostTime);
+  } 
+  if ((blockNumber == 2 || blockNumber == 3) && notPickup) { // in open area
+    forwardawhile(junctionOutpostTime);
+    // need to change to function for approaching block in open area
+  } 
+  if ((blockNumber == 0 || blockNumber == 1) && notPickup) {
+    // search for end of line
+    while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
+      gostraight();                                   
+    } 
+    delay(80);                                       // make sure it goes further away from the white line
+    stopmoving(); 
+  }
+  if ((blockNumber == 4) && notPickup) {
+    // stop at finish box
+    forwardawhile(junctionFinishTime);
   }
 
 
@@ -250,17 +269,24 @@ void routefollow(const char route[], int numberOfJunctions) {
 void loop() {
   // in C++, size of char = number of letters + 1
 
-  // int blockNumber = 0;
-  // int notPickup = -1;
-  // int blockType = -1;
-  // routefollow("LR", 2);
-  // junctionrotation('R');
+  routefollow("LR", 2);
+  blockNumber = 1;
+  notPickup = 0;
   for (int routePtr = 0; routePtr < 16; routePtr = routePtr + 2) {
     //int routePtr = (blockNumber - 1) * 4 + notPickup * 2 + blockType;
+    if (notPickup || blockNumber == 1 || blockNumber == 2) { // use flag for this line 
+      junctionrotation('R');
+    }
     int numberOfJunctions = sizeOfRoutes[routePtr];
     routefollow(routes[routePtr], numberOfJunctions);
-    junctionrotation('R');
+
+    blockNumber = (routePtr + 2) / 4 + 1;
+    notPickup = !notPickup;
+
+     
   }
 
-  delay(100000);
+  while (1) {
+    stopmoving();
+  }
 }
