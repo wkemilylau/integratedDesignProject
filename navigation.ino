@@ -25,7 +25,10 @@ int valSideRight = digitalRead(lineSideRightPin); // read side right input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
 // array of routes; does not include backing out in free space; does not include U-turns after picking block up in line area
-char routes[16][6] = {           
+char routes[16][6] = {  
+
+  // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
+
           "RL",               // 0: block 1 to green
           "LSR",              // 1: block 1 to red
           "SRSR",             // 2: green to block 2
@@ -42,6 +45,8 @@ char routes[16][6] = {
           "LSRS",             // 13: block 4 to red
           "RSR",              // 14: green to finish
           "LL"};              // 15: red to finish
+
+  // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
 
 // number of junctions of each route, used when passing as second argument to routefollow()
 int sizeOfRoutes[16] = {2,3,4,3,4,3,3,5,5,2,3,3,3,4,3,2};
