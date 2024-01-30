@@ -15,6 +15,7 @@ int* RightMotorSpeedPter = &RightMotorSpeed;
 int LeftMotorSpeed = 0;
 int* LeftMotorSpeedPter = &LeftMotorSpeed;
 
+
 // Set line sensors to input pins
 int lineleftPin = 2;
 int linerightPin = 3;
@@ -56,6 +57,9 @@ const int HighSpeed = 150;            // adjustment on straight line
 const int NormalSpeed = 100;          // straight line
 const int LowSpeed = 0;               // adjustment on straight line
 const int RotationSpeed = 100;        // rotation
+
+// Junction to outpost (green red area) time in milliseconds
+int junctionOutpostTime = 250 / NormalSpeed * 1000; // change arbitrary constant '400' // Higher normal speed means shorter time 
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
@@ -220,15 +224,26 @@ void routefollow(const char route[], int numberOfJunctions) {
     // increment currentJunction counter
   }
 
-  // if not in open area indicated by flag:
-  while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
-    gostraight();                                   
-  } 
-  delay(200);                                       // make sure it goes further away from the white line
-  //
+  if (1) {
+    // walk for fixed time
+    unsigned long currentMillis = millis();
+    unsigned long startMillis = millis();
+    while((currentMillis - startMillis) < junctionOutpostTime) {
+      currentMillis = millis();
+      gostraight();
+    }
+    stopmoving();
+  // } else if (/* open area */) {
+  //   // return
+  // } else if (/* line following area pick up block */) {
+  //   // search for end of line
+  //   while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
+  //     gostraight();                                   
+  //   } 
+  //   delay(200);                                       // make sure it goes further away from the white line
+  //   stopmoving(); 
+  }
 
-  stopmoving(); 
-    
 
 }
 
