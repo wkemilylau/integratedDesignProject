@@ -10,16 +10,19 @@
 const int sensityPin = A0;
 
 // Define LED setup to be used upon block detection
-const int ledRed = 2;    // Pin number, change if necessary
-const int ledGreen = 3;  // Pin number, change if necessary
+const int LED_RED = 2;    // Pin number, change if necessary
+const int LED_GREEN = 3;  // Pin number, change if necessary
 
 // Constant boolean for block type (false: foam, true: solid)
 const bool IS_SOLID_DEFAULT = false;
 
+// Constant for threshold distances. Change this based on electrical/mechanical team's recommendation
+const int THRESHOLD_DIST = 3;
+
 void setup() {
   Serial.begin(9600);       // Initialize Serial communication
-  pinMode(ledRed, OUTPUT);  // Set Pin 2 as output for RED led (SOLID block)
-  pinMode(ledGreen, OUTPUT);// Set Pin 3 as output for GREEN led (FOAM block)
+  pinMode(LED_RED, OUTPUT);  // Set Pin 2 as output for RED led (SOLID block)
+  pinMode(LED_GREEN, OUTPUT);// Set Pin 3 as output for GREEN led (FOAM block)
 }
 
 // Declare variables for distance and sensor reading
@@ -35,21 +38,21 @@ void lightLED(int ledColour) { /
 
 // Function to detect the type of block based on distance
 void detectBlock(float distance, bool isFoam) {
-  if (distance >= 0 && distance <= 3) {
+  if (distance >= 0 && distance <= THRESHOLD_DIST) {
     // SOLID block
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
-    lightLED(ledRed);
-  } else if (distance > 3 && distance <= 6) {
+    lightLED(LED_RED);
+  } else if (distance > THRESHOLD_DIST && distance <= THRESHOLD_DIST + 3) {
     // FOAM block
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightLED(ledGreen);
+    lightLED(LED_GREEN);
   } else {
     // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightLED(ledGreen);
+    lightLED(LED_GREEN);
   }
 }
 
