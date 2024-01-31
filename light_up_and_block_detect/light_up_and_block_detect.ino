@@ -1,6 +1,9 @@
-/*
-   URM09 Block detection using Ultrasonic Sensor test
-*/
+#include <Servo.h>
+
+Servo myservo; // create servo object to control a servo
+bool PICKED_UP = false; // boolean variable to track the state
+int START_ANGLE = 180; // initial start angle
+int END_ANGLE = 0; // initial end angle
 
 // Define constants for maximum range and ADC solution accuracy
 #define MAX_RANGE 520        // The max measurement value of the module is 520cm (a little bit longer than the effective max range)
@@ -23,13 +26,14 @@ void setup() {
   Serial.begin(9600);       // Initialize Serial communication
   pinMode(LED_RED, OUTPUT);  // Set Pin 2 as output for RED led (SOLID block)
   pinMode(LED_GREEN, OUTPUT);// Set Pin 3 as output for GREEN led (FOAM block)
+  myservo.attach(3); // attaches the servo on pin 9 to the servo object
 }
 
 // Declare variables for distance and sensor reading
 float dist, sensity;
 
 // Function to control LED lighting
-void lightLED(int ledColour) { /
+void lightLED(int ledColour) { 
   digitalWrite(ledColour, HIGH);  // Turn on LED
   delay(6000);
   digitalWrite(ledColour, LOW);   // Turn off LED
@@ -43,16 +47,48 @@ void detectBlock(float distance, bool isFoam) {
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
     lightLED(LED_RED);
+    if (!PICKED_UP) {
+      // Pickup the block
+      pickupBlock();
+    }
   } else if (distance > THRESHOLD_DIST && distance <= THRESHOLD_DIST + 3) {
     // FOAM block
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
     lightLED(LED_GREEN);
+    if (PICKED_UP) {
+      // Release the block
+      releaseBlock();
+    }
   } else {
     // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
     lightLED(LED_GREEN);
+    if (PICKED_UP) {
+      // Release the block
+      releaseBlock();
+    }
+  }
+}
+
+void pickupBlock() {
+  PICKED_UP = true; // Set the boolean to true indicating that the block is picked up
+
+  // Rotate the servo from START_ANGLE to END_ANGLE
+  for (int pos = START_ANGLE; pos <= END_ANGLE; pos += 1) {
+    myservo.write(pos);
+    delay(15);
+  }
+}
+
+void releaseBlock() {
+  PICKED_UP = false; // Set the boolean to false indicating that the block is released
+
+  // Rotate the servo from END_ANGLE to START_ANGLE
+  for (int pos = END_ANGLE; pos >= START_ANGLE; pos -= 1) {
+    myservo.write(pos);
+    delay(15);
   }
 }
 
@@ -67,6 +103,9 @@ void loop() {
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
   detectBlock(dist, IS_SOLID_DEFAULT);
 
+  pickupBlock();
+
   // Delay for a short period before the next iteration
   delay(500);
+  
 }
