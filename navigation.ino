@@ -9,10 +9,16 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *motor_right = AFMS.getMotor(1);
 Adafruit_DCMotor *motor_left = AFMS.getMotor(2);
 
-// Global flags for status
+// Set LED pins and blinking time variables
+int blueLED = 6;
+bool blueLEDStatus = 0;
+unsigned long currentLEDMillis;
+unsigned long startLEDMillis;
+
+// Global flags for block status
 int blockNumber = 0;
-int notPickup = -1;
-int blockType = 0;    // all green for testing
+int pickup = 0;
+int blockType = 1;    // all red for testing
 
 // Global flags for motor status
 int RightMotorSpeed = 0;
@@ -25,13 +31,15 @@ int* LeftMotorSpeedPter = &LeftMotorSpeed;
 int lineleftPin = 2;
 int linerightPin = 3;
 int lineSideRightPin = 4;
+// int lineSideLeftPin = 5;
 int valLeft = digitalRead(lineleftPin); // read left input value
 int valRight = digitalRead(linerightPin); // read right input value
 int valSideRight = digitalRead(lineSideRightPin); // read side right input value
+// int valSideLeft = digitalRead(lineSideLeftPin); // read side left input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
 // array of routes; does not include backing out in free space; does not include U-turns after picking block up in line area
-char routes[16][6] = {  
+const char routes[16][6] = {  
 
   // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
 
@@ -56,7 +64,7 @@ char routes[16][6] = {
   // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
 
 // number of junctions of each route, used when passing as second argument to routefollow()
-int sizeOfRoutes[16] = {2,3,4,3,4,3,3,5,5,2,3,3,3,4,3,2};
+const int sizeOfRoutes[16] = {2,3,4,3,4,3,3,5,5,2,3,3,3,4,3,2};
 
 // Set speed constants
 const int HighSpeed = 250;            // adjustment on straight line
@@ -77,6 +85,8 @@ void setup() {
   pinMode(lineleftPin, INPUT);
   pinMode(linerightPin, INPUT); 
   pinMode(lineSideRightPin, INPUT); 
+  // pinMode(lineSideLeftPin, INPUT); 
+  pinMode(blueLED, OUTPUT);
 
 
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -175,6 +185,8 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
 void stopmoving() {
   updateleftmotorspeed(0);
   updaterightmotorspeed(0);
+  digitalWrite(blueLED, LOW); // turn off blue LED
+  blueLEDStatus = 0; 
   delay(300);
 }
 
@@ -182,6 +194,17 @@ void gostraight() {   // walk in straight line
   valLeft = digitalRead(lineleftPin); // read left input value
   valRight = digitalRead(linerightPin); // read right input value
   valSideRight = digitalRead(lineSideRightPin); // read side right input value
+  // digitalWrite(blueLED, HIGH); // blinking blue led
+
+  // update millis for blinking
+  currentLEDMillis = millis();
+
+  if(currentLEDMillis - startLEDMillis > 250) {
+    blueLEDStatus = !blueLEDStatus;
+    digitalWrite(blueLED, blueLEDStatus);
+    startLEDMillis = millis();
+  }
+
 
   if(valLeft == 1 && valRight == 1) { // both white
     // Serial.println("Go straight");
@@ -214,15 +237,18 @@ void gostraight() {   // walk in straight line
     updaterightmotorspeed(NormalSpeed);
   }
   delay(10);        // we need delay for the motor to respond
+  // digitalWrite(blueLED, LOW); // blinking blue led
+
 }
 
 void forwardawhile(int time) {
-    unsigned long currentMillis = millis();
-    unsigned long startMillis = millis();
-    while((currentMillis - startMillis) < time) {
-      currentMillis = millis();
+    unsigned long currentMotorMillis = millis();
+    unsigned long startMotorMillis = millis();
+    while((currentMotorMillis - startMotorMillis) < time) {
+      currentMotorMillis = millis();
       gostraight();
     }
+    digitalWrite(blueLED, LOW);
     stopmoving(); 
 }
 
@@ -233,6 +259,7 @@ void routefollow(const char route[], int numberOfJunctions) {
     while (valSideRight == 0) {                     // go to junction
       gostraight();
     }
+    digitalWrite(blueLED, LOW);
     delay(50);                                      // make sure the front sensors are sufficiently far away from junction
     stopmoving();
 
@@ -243,14 +270,14 @@ void routefollow(const char route[], int numberOfJunctions) {
     // increment currentJunction counter
   }
 
-  if (!notPickup) {
+  if (pickup) {
     forwardawhile(junctionOutpostTime);
   } 
-  if ((blockNumber == 2 || blockNumber == 3) && notPickup) { // in open area
+  if ((blockNumber == 2 || blockNumber == 3) && !pickup) { // in open area
     forwardawhile(junctionOutpostTime);
     // need to change to function for approaching block in open area
   } 
-  if ((blockNumber == 0 || blockNumber == 1) && notPickup) {
+  if ((blockNumber == 0 || blockNumber == 1) && !pickup) {
     // search for end of line
     while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
       gostraight();                                   
@@ -258,7 +285,7 @@ void routefollow(const char route[], int numberOfJunctions) {
     delay(80);                                       // make sure it goes further away from the white line
     stopmoving(); 
   }
-  if ((blockNumber == 4) && notPickup) {
+  if ((blockNumber == 4) && !pickup) {
     // stop at finish box
     forwardawhile(junctionFinishTime);
   }
@@ -271,17 +298,17 @@ void loop() {
 
   routefollow("LR", 2);
   blockNumber = 1;
-  notPickup = 0;
-  for (int routePtr = 0; routePtr < 16; routePtr = routePtr + 2) {
-    //int routePtr = (blockNumber - 1) * 4 + notPickup * 2 + blockType;
-    if (notPickup || blockNumber == 1 || blockNumber == 2) { // use flag for this line 
+  pickup = 1;
+  for (int routePtr = 1; routePtr < 16; routePtr = routePtr + 2) {
+    //int routePtr = (blockNumber - 1) * 4 + pickup?????? * 2 + blockType;
+    if (!pickup || blockNumber == 1 || blockNumber == 2) { // use flag for this line 
       junctionrotation('R');
     }
     int numberOfJunctions = sizeOfRoutes[routePtr];
     routefollow(routes[routePtr], numberOfJunctions);
 
     blockNumber = (routePtr + 2) / 4 + 1;
-    notPickup = !notPickup;
+    pickup = !pickup;
 
      
   }
