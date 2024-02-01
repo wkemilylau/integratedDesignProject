@@ -10,7 +10,7 @@ Adafruit_DCMotor *motor_right = AFMS.getMotor(1);
 Adafruit_DCMotor *motor_left = AFMS.getMotor(2);
 
 // Set LED pins and blinking time variables
-int blueLED = 6;
+int blueLED = 12;
 bool blueLEDStatus = 0;
 unsigned long currentLEDMillis;
 unsigned long startLEDMillis;
@@ -30,13 +30,17 @@ int* LeftMotorSpeedPter = &LeftMotorSpeed;
 // Set line sensors to input pins
 int lineleftPin = 2;
 int linerightPin = 3;
-int lineSideRightPin = 4;
-int lineSideLeftPin = 5;
+int lineSideRightPin = 13;
+int lineSideLeftPin = 8;
 int valLeft = digitalRead(lineleftPin); // read left input value
 int valRight = digitalRead(linerightPin); // read right input value
 int valSideRight = digitalRead(lineSideRightPin); // read side right input value
 int valSideLeft = digitalRead(lineSideLeftPin); // read side left input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
+
+// Set ultrasonic and ToF sensors to input pins
+
+//
 
 // array of routes; does not include backing out in free space; does not include U-turns after picking block up in line area
 const char routes[16][6] = {  
@@ -340,17 +344,6 @@ void loop() {
       identifyblock();
     }
   }
-
-
-  
-  Serial.print("blockNumber");
-  Serial.println(blockNumber);
-  Serial.print("blockType");
-  Serial.println(blockType);
-  Serial.print("pickup");
-  Serial.println(pickup);
-  Serial.print("routeptr");
-  Serial.println(routePtr);
 
   
 }
