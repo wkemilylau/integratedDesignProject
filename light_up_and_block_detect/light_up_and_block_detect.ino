@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 Servo myservo; // create servo object to control a servo
-bool pickup = 0; // boolean variable to track the state
+bool pickup = 0; // boolean to track pickup state
 int startAngle = 180; // initial start angle
 int endAngle = 0; // initial end angle
 
@@ -12,21 +12,17 @@ int endAngle = 0; // initial end angle
 // Define analog input pin for the ultrasonic sensor
 const int sensityPin = A0;
 
-// Define LED setup to be used upon block detection
-const int ledRed = 2;    // Pin number, change if necessary
-const int ledGreen = 3;  // Pin number, change if necessary
-
-// Constant boolean for block type (0 or false: foam, 1 or true: solid)
-const bool blockType = 0;
-
-// Constant for threshold distances. Change this based on electrical/mechanical team's recommendation
-const int thresholdDistance = 3;
+// Define LED setup to be used upon block detection, boolean flag for blockType and distance that determines solid/foam 
+const int ledRed = 2;             // Pin number, change if necessary
+const int ledGreen = 3;           // Pin number, change if necessary
+const bool blockType = 0;         // 0: foam, 1 solid
+const int thresholdDistance = 3;  // Change this based on electrical/mechanical team's recommendation
 
 void setup() {
-  Serial.begin(9600);       // Initialize Serial communication
-  pinMode(ledRed, OUTPUT);  // Set Pin 2 as output for RED led (SOLID block)
-  pinMode(ledGreen, OUTPUT);// Set Pin 3 as output for GREEN led (FOAM block)
-  myservo.attach(3); // attaches the servo on pin 9 to the servo object
+  Serial.begin(9600);         // Initialize Serial communication
+  pinMode(ledRed, OUTPUT);    // Set Pin 2 as output for RED led (SOLID block)
+  pinMode(ledGreen, OUTPUT);  // Set Pin 3 as output for GREEN led (FOAM block)
+  myservo.attach(3);          // attaches the servo on pin 9 to the servo object
 }
 
 // Declare variables for distance and sensor reading
@@ -41,11 +37,12 @@ void lightled(int ledColour) {
 }
 
 // Function to detect the type of block based on distance
-void detectblock(float distance, bool isFoam) {
+void detectblock(float distance, bool blockType) {
   if (distance >= 0 && distance <= thresholdDistance) {
     // SOLID block
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
+    blockType = 1; // update blockType flag
     lightled(ledRed);
     if (!pickup) {
       // Pickup the block
@@ -73,7 +70,7 @@ void detectblock(float distance, bool isFoam) {
 }
 
 void pickupblock() {
-  pickup = true; // Set the boolean to true indicating that the block is picked up
+  pickup = 1; // Set the boolean to true indicating that the block is picked up
 
   // Rotate the servo from startAngle to endAngle
   for (int pos = startAngle; pos <= endAngle; pos += 1) {
@@ -104,6 +101,7 @@ void loop() {
   detectblock(dist, blockType);
 
   pickupblock();
+  releaseblock();
 
   // Delay for a short period before the next iteration
   delay(500);
