@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 Servo myservo; // create servo object to control a servo
-bool PICKED_UP = false; // boolean variable to track the state
+bool pickup = 0; // boolean variable to track the state
 int START_ANGLE = 180; // initial start angle
 int END_ANGLE = 0; // initial end angle
 
@@ -16,8 +16,8 @@ const int sensityPin = A0;
 const int LED_RED = 2;    // Pin number, change if necessary
 const int LED_GREEN = 3;  // Pin number, change if necessary
 
-// Constant boolean for block type (false: foam, true: solid)
-const bool IS_SOLID_DEFAULT = false;
+// Constant boolean for block type (0 or false: foam, 1 or true: solid)
+const bool blockType = 0;
 
 // Constant for threshold distances. Change this based on electrical/mechanical team's recommendation
 const int THRESHOLD_DIST = 3;
@@ -33,7 +33,7 @@ void setup() {
 float dist, sensity;
 
 // Function to control LED lighting
-void lightLED(int ledColour) { 
+void lightled(int ledColour) { 
   digitalWrite(ledColour, HIGH);  // Turn on LED
   delay(6000);
   digitalWrite(ledColour, LOW);   // Turn off LED
@@ -41,22 +41,22 @@ void lightLED(int ledColour) {
 }
 
 // Function to detect the type of block based on distance
-void detectBlock(float distance, bool isFoam) {
+void detectblock(float distance, bool isFoam) {
   if (distance >= 0 && distance <= THRESHOLD_DIST) {
     // SOLID block
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
-    lightLED(LED_RED);
-    if (!PICKED_UP) {
+    lightled(LED_RED);
+    if (!pickup) {
       // Pickup the block
-      pickupBlock();
+      pickupblock();
     }
   } else if (distance > THRESHOLD_DIST && distance <= THRESHOLD_DIST + 3) {
     // FOAM block
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightLED(LED_GREEN);
-    if (PICKED_UP) {
+    lightled(LED_GREEN);
+    if (pickup) {
       // Release the block
       releaseBlock();
     }
@@ -64,16 +64,16 @@ void detectBlock(float distance, bool isFoam) {
     // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightLED(LED_GREEN);
-    if (PICKED_UP) {
+    lightled(LED_GREEN);
+    if (pickup) {
       // Release the block
       releaseBlock();
     }
   }
 }
 
-void pickupBlock() {
-  PICKED_UP = true; // Set the boolean to true indicating that the block is picked up
+void pickupblock() {
+  pickup = true; // Set the boolean to true indicating that the block is picked up
 
   // Rotate the servo from START_ANGLE to END_ANGLE
   for (int pos = START_ANGLE; pos <= END_ANGLE; pos += 1) {
@@ -83,7 +83,7 @@ void pickupBlock() {
 }
 
 void releaseBlock() {
-  PICKED_UP = false; // Set the boolean to false indicating that the block is released
+  pickup = 0; // Set the boolean to 0 indicating that the block is released
 
   // Rotate the servo from END_ANGLE to START_ANGLE
   for (int pos = END_ANGLE; pos >= START_ANGLE; pos -= 1) {
@@ -101,9 +101,9 @@ void loop() {
 
   // Determine the type of block based on the distance reading
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
-  detectBlock(dist, IS_SOLID_DEFAULT);
+  detectblock(dist, blockType);
 
-  pickupBlock();
+  pickupblock();
 
   // Delay for a short period before the next iteration
   delay(500);
