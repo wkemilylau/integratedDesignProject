@@ -58,7 +58,7 @@ void detectblock(float distance, bool isFoam) {
     lightled(LED_GREEN);
     if (pickup) {
       // Release the block
-      releaseBlock();
+      releaseblock();
     }
   } else {
     // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
@@ -67,7 +67,7 @@ void detectblock(float distance, bool isFoam) {
     lightled(LED_GREEN);
     if (pickup) {
       // Release the block
-      releaseBlock();
+      releaseblock();
     }
   }
 }
@@ -82,7 +82,7 @@ void pickupblock() {
   }
 }
 
-void releaseBlock() {
+void releaseblock() {
   pickup = 0; // Set the boolean to 0 indicating that the block is released
 
   // Rotate the servo from END_ANGLE to START_ANGLE
