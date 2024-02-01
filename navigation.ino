@@ -1,9 +1,10 @@
 #include <Adafruit_MotorShield.h>
+// #include "Arduino.h"
+// #include "Wire.h"
+// #include "DFRobot_VL53L0X.h"
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-// Or, create it with a different I2C address (say for stacking)
-// Adafruit_MotorShield AFMS = Adafruit_MotorShield(0x61);
 
 // Set motor ports M2 (left) , M1 (right)
 Adafruit_DCMotor *motor_right = AFMS.getMotor(1);
@@ -19,6 +20,9 @@ unsigned long startLEDMillis;
 int blockNumber = 0;
 int pickup = 0;
 int blockType = 0;    // all green for testing
+
+// Global flag for wall in open area
+int wall = 1;           // 0 means past the wall, can start finding block
 
 // Global flags for motor status
 int RightMotorSpeed = 0;
@@ -134,6 +138,13 @@ void updateleftmotorspeed(int NewLeftMotorSpeed) {    // update left motor speed
   }
 }
 
+void updatelinesensors() {
+  valLeft = digitalRead(lineleftPin); // read left input value
+  valRight = digitalRead(linerightPin); // read right input value
+  valSideRight = digitalRead(lineSideRightPin); // read side right input value
+  valSideLeft = digitalRead(lineSideLeftPin); // read side left input value
+}
+
 void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 1 character
                                               // Direction == "R" means turn right, "L" means left, "S" (or other char) means straight line
     // Serial.println("start to rotate");
@@ -200,10 +211,7 @@ void stopmoving() {
 }
 
 void gostraight() {   // walk in straight line 
-  valLeft = digitalRead(lineleftPin); // read left input value
-  valRight = digitalRead(linerightPin); // read right input value
-  valSideRight = digitalRead(lineSideRightPin); // read side right input value
-  valSideLeft = digitalRead(lineSideLeftPin); // read side left input value
+  updatelinesensors();
 
   // update millis for blinking
   currentLEDMillis = millis();
@@ -260,6 +268,32 @@ void forwardawhile(int time) {
     stopmoving(); 
 }
 
+void findandapproachblock() {
+  updatelinesensors();
+
+  // while distance bigger than xxx: go straight
+  // distance smaller than xxx: wall detected, wall = 0, forwardawhile, can start detecting block
+  // while distance bigger than xxx: go straight
+  // distance smaller than xxx: block detected, turn right???????? cant use junctionrotation('R'), forwardawhile ????? (gostraight????) until reach back wall
+  // pickup();
+  // identifyblock();
+
+}
+
+void returntoline() {
+  // go backward until one of the side sensors touch white, turn left
+  updatelinesensors();
+
+  while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
+    motor_left->run(BACKWARD);
+    motor_right->run(BACKWARD);
+    updateleftmotorspeed(NormalSpeed);
+    updaterightmotorspeed(NormalSpeed);
+  }
+
+  junctionrotation('L');              // turn left to go back on white line
+}
+
 void routefollow(const char route[], int numberOfJunctions) {
   
   for (int currentJunction = 0; currentJunction < numberOfJunctions; currentJunction++) {
@@ -282,7 +316,9 @@ void routefollow(const char route[], int numberOfJunctions) {
   } 
   if ((blockNumber == 2 || blockNumber == 3) && !pickup) { // in open area
     forwardawhile(junctionOutpostTime);
-    // need to change to function for approaching block in open area
+    findandapproachblock();
+    liftblock();
+    returntoline();
   } 
   if ((blockNumber == 0 || blockNumber == 1) && !pickup) {
     // search for end of line
