@@ -315,6 +315,7 @@ void identifyblock() {
 void loop() {
   // in C++, size of char = number of letters + 1
   routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
+
   if (routePtr < 0) {                   // from start to block 1
     routefollow("LR", 2);
     liftblock();
@@ -339,6 +340,8 @@ void loop() {
       identifyblock();
     }
   }
+
+
   
   Serial.print("blockNumber");
   Serial.println(blockNumber);
