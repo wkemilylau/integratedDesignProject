@@ -2,30 +2,30 @@
 
 Servo myservo; // create servo object to control a servo
 bool pickup = 0; // boolean variable to track the state
-int START_ANGLE = 180; // initial start angle
-int END_ANGLE = 0; // initial end angle
+int startAngle = 180; // initial start angle
+int endAngle = 0; // initial end angle
 
 // Define constants for maximum range and ADC solution accuracy
-#define MAX_RANGE 520        // The max measurement value of the module is 520cm (a little bit longer than the effective max range)
-#define ADC_SOLUTION 1023.0  // ADC accuracy of Arduino UNO is 10-bit
+#define maxRange 520        // The max measurement value of the module is 520cm (a little bit longer than the effective max range)
+#define adcSolution 1023.0  // ADC accuracy of Arduino UNO is 10-bit
 
 // Define analog input pin for the ultrasonic sensor
 const int sensityPin = A0;
 
 // Define LED setup to be used upon block detection
-const int LED_RED = 2;    // Pin number, change if necessary
-const int LED_GREEN = 3;  // Pin number, change if necessary
+const int ledRed = 2;    // Pin number, change if necessary
+const int ledGreen = 3;  // Pin number, change if necessary
 
 // Constant boolean for block type (0 or false: foam, 1 or true: solid)
 const bool blockType = 0;
 
 // Constant for threshold distances. Change this based on electrical/mechanical team's recommendation
-const int THRESHOLD_DIST = 3;
+const int thresholdDistance = 3;
 
 void setup() {
   Serial.begin(9600);       // Initialize Serial communication
-  pinMode(LED_RED, OUTPUT);  // Set Pin 2 as output for RED led (SOLID block)
-  pinMode(LED_GREEN, OUTPUT);// Set Pin 3 as output for GREEN led (FOAM block)
+  pinMode(ledRed, OUTPUT);  // Set Pin 2 as output for RED led (SOLID block)
+  pinMode(ledGreen, OUTPUT);// Set Pin 3 as output for GREEN led (FOAM block)
   myservo.attach(3); // attaches the servo on pin 9 to the servo object
 }
 
@@ -42,20 +42,20 @@ void lightled(int ledColour) {
 
 // Function to detect the type of block based on distance
 void detectblock(float distance, bool isFoam) {
-  if (distance >= 0 && distance <= THRESHOLD_DIST) {
+  if (distance >= 0 && distance <= thresholdDistance) {
     // SOLID block
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
-    lightled(LED_RED);
+    lightled(ledRed);
     if (!pickup) {
       // Pickup the block
       pickupblock();
     }
-  } else if (distance > THRESHOLD_DIST && distance <= THRESHOLD_DIST + 3) {
+  } else if (distance > thresholdDistance && distance <= thresholdDistance + 3) {
     // FOAM block
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightled(LED_GREEN);
+    lightled(ledGreen);
     if (pickup) {
       // Release the block
       releaseblock();
@@ -64,7 +64,7 @@ void detectblock(float distance, bool isFoam) {
     // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightled(LED_GREEN);
+    lightled(ledGreen);
     if (pickup) {
       // Release the block
       releaseblock();
@@ -75,8 +75,8 @@ void detectblock(float distance, bool isFoam) {
 void pickupblock() {
   pickup = true; // Set the boolean to true indicating that the block is picked up
 
-  // Rotate the servo from START_ANGLE to END_ANGLE
-  for (int pos = START_ANGLE; pos <= END_ANGLE; pos += 1) {
+  // Rotate the servo from startAngle to endAngle
+  for (int pos = startAngle; pos <= endAngle; pos += 1) {
     myservo.write(pos);
     delay(15);
   }
@@ -85,8 +85,8 @@ void pickupblock() {
 void releaseblock() {
   pickup = 0; // Set the boolean to 0 indicating that the block is released
 
-  // Rotate the servo from END_ANGLE to START_ANGLE
-  for (int pos = END_ANGLE; pos >= START_ANGLE; pos -= 1) {
+  // Rotate the servo from endAngle to startAngle
+  for (int pos = endAngle; pos >= startAngle; pos -= 1) {
     myservo.write(pos);
     delay(15);
   }
@@ -97,7 +97,7 @@ void loop() {
   sensity = analogRead(sensityPin);
 
   // Convert sensor reading to distance using a linear mapping
-  dist = sensity * MAX_RANGE / ADC_SOLUTION;
+  dist = sensity * maxRange / adcSolution;
 
   // Determine the type of block based on the distance reading
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
