@@ -43,8 +43,10 @@ int valSideLeft = digitalRead(lineSideLeftPin); // read side left input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
 // Set ultrasonic and ToF sensors to input pins
-
+// int usDistance;
+// int tofDistance;
 //
+
 
 // array of routes; does not include backing out in free space; does not include U-turns after picking block up in line area
 const char routes[16][6] = {  
@@ -269,14 +271,24 @@ void forwardawhile(int time) {
 }
 
 void findandapproachblock() {
-  updatelinesensors();
 
-  // while distance bigger than xxx: go straight
-  // distance smaller than xxx: wall detected, wall = 0, forwardawhile, can start detecting block
-  // while distance bigger than xxx: go straight
-  // distance smaller than xxx: block detected, turn right???????? cant use junctionrotation('R'), forwardawhile ????? (gostraight????) until reach back wall
-  // pickup();
-  // identifyblock();
+  /*
+  while (tofDistance > x) {         x: distance of wall to sensor, to be tested
+    gostraight();
+    updatelinesensors();
+    update tofDistance
+  }
+  forwardawhile();
+
+  while (tofDistance > y) {         y: distance of back wall of building to sensor, to be tested
+    gostraight();
+    updatelinesensors();
+    update tofDistance
+  }
+  turn right until both side sensors detect white?
+  forwardawhile();   ?? go straight inside forwardawhile() requires white line           // until reaches back wall
+
+  */
 
 }
 
@@ -307,8 +319,6 @@ void routefollow(const char route[], int numberOfJunctions) {
     // Serial.println("current junction");
     // Serial.println(route[currentJunction]);
     junctionrotation(route[currentJunction]);       // arrives junction, rotate
-
-    // increment currentJunction counter
   }
 
   if (pickup) {
@@ -317,6 +327,7 @@ void routefollow(const char route[], int numberOfJunctions) {
   if ((blockNumber == 2 || blockNumber == 3) && !pickup) { // in open area
     forwardawhile(junctionOutpostTime);
     findandapproachblock();
+    identifyblock();
     liftblock();
     returntoline();
   } 
@@ -358,8 +369,8 @@ void loop() {
 
   if (routePtr < 0) {                   // from start to block 1
     routefollow("LR", 2);
-    liftblock();
     identifyblock();
+    liftblock();
   } else if (routePtr >= 14) {          // return to finish
     junctionrotation('R');
     int numberOfJunctions = sizeOfRoutes[routePtr];
@@ -376,8 +387,8 @@ void loop() {
     if (pickup) {
       release();
     } else {
-      liftblock();
       identifyblock();
+      liftblock();
     }
   }
 
