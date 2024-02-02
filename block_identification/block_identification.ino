@@ -1,6 +1,6 @@
 #include <Servo.h>
 
-Servo myservo; // create servo object to control a servo
+Servo pincerServo; // create servo object to control a servo
 bool pickup = 0; // boolean to track pickup state
 int startAngle = 0; // initial start angle
 int endAngle = 90; // initial end angle
@@ -13,16 +13,16 @@ int endAngle = 90; // initial end angle
 const int sensityPin = A0;
 
 // Define LED setup to be used upon block detection, boolean flag for blockType and distance that determines solid/foam 
-const int ledRed = 2;             // Pin number, change if necessary
-const int ledGreen = 3;           // Pin number, change if necessary
+const int redLED = 2;             // Pin number, change if necessary
+const int greenLED = 3;           // Pin number, change if necessary
 const bool blockType = 0;         // 0: foam, 1 solid
 const int thresholdDistance = 3;  // Change this based on electrical/mechanical team's recommendation
 
 void setup() {
   Serial.begin(9600);         // Initialize Serial communication
-  pinMode(ledRed, OUTPUT);    // Set Pin 2 as output for RED led (SOLID block)
-  pinMode(ledGreen, OUTPUT);  // Set Pin 3 as output for GREEN led (FOAM block)
-  myservo.attach(9);          // attaches the servo on pin 9 to the servo object
+  pinMode(redLED, OUTPUT);    // Set Pin 2 as output for RED led (SOLID block)
+  pinMode(greenLED, OUTPUT);  // Set Pin 3 as output for GREEN led (FOAM block)
+  pincerServo.attach(9);          // attaches the servo on pin 9 to the servo object
 }
 
 // Declare variables for distance and sensor reading
@@ -43,7 +43,7 @@ void detectblock(float distance, bool blockType) {
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
     blockType = 1; // update blockType flag
-    lightled(ledRed);
+    lightled(redLED);
     if (!pickup) {
       // Pickup the block
       pickupblock();
@@ -52,7 +52,7 @@ void detectblock(float distance, bool blockType) {
     // FOAM block
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightled(ledGreen);
+    lightled(greenLED);
     if (pickup) {
       // Release the block
       releaseblock();
@@ -61,7 +61,7 @@ void detectblock(float distance, bool blockType) {
     // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
-    lightled(ledGreen);
+    lightled(greenLED);
     if (pickup) {
       // Release the block
       releaseblock();
@@ -74,7 +74,7 @@ void pickupblock() {
 
   // Rotate the servo from startAngle to endAngle
   for (int pos = startAngle; pos <= endAngle; pos += 1) {
-    myservo.write(pos);
+    pincerServo.write(pos);
     delay(15);
   }
 }
@@ -84,7 +84,7 @@ void releaseblock() {
 
   // Rotate the servo from endAngle to startAngle
   for (int pos = endAngle; pos >= startAngle; pos -= 1) {
-    myservo.write(pos);
+    pincerServo.write(pos);
     delay(15);
   }
 }
