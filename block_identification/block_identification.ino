@@ -2,8 +2,8 @@
 
 Servo pincerServo; // create servo object to control a servo
 bool pickup = 0; // boolean to track pickup state
-int startAngle = 0; // initial start angle
-int endAngle = 90; // initial end angle
+int servoStartAngle = 0; // initial start angle
+int servoEndAngle = 90; // initial end angle
 
 // Define constants for maximum range and ADC solution accuracy
 #define maxRange 520        // The max measurement value of the module is 520cm (a little bit longer than the effective max range)
@@ -25,8 +25,8 @@ void setup() {
   pincerServo.attach(9);          // attaches the servo on pin 9 to the servo object
 }
 
-// Declare variables for distance and sensor reading
-float dist, sensity;
+// Declare variables for distance and ultrasonic sensor reading
+float ultrasonic_dist, sensity;
 
 // Function to control LED lighting
 void lightled(int ledColour) { 
@@ -72,8 +72,8 @@ void detectblock(float distance, bool blockType) {
 void pickupblock() {
   pickup = 1; // Set the boolean to true indicating that the block is picked up
 
-  // Rotate the servo from startAngle to endAngle
-  for (int pos = startAngle; pos <= endAngle; pos += 1) {
+  // Rotate the servo from servoStartAngle to servoEndAngle
+  for (int pos = servoStartAngle; pos <= servoEndAngle; pos += 1) {
     pincerServo.write(pos);
     delay(15);
   }
@@ -82,8 +82,8 @@ void pickupblock() {
 void releaseblock() {
   pickup = 0; // Set the boolean to 0 indicating that the block is released
 
-  // Rotate the servo from endAngle to startAngle
-  for (int pos = endAngle; pos >= startAngle; pos -= 1) {
+  // Rotate the servo from servoEndAngle to servoStartAngle
+  for (int pos = servoEndAngle; pos >= servoStartAngle; pos -= 1) {
     pincerServo.write(pos);
     delay(15);
   }
@@ -94,11 +94,11 @@ void loop() {
   sensity = analogRead(sensityPin);
 
   // Convert sensor reading to distance using a linear mapping
-  dist = sensity * maxRange / adcSolution;
+  ultrasonic_dist = sensity * maxRange / adcSolution;
 
   // Determine the type of block based on the distance reading
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
-//  detectblock(dist, blockType);
+//  detectblock(ultrasonic_dist, blockType);
 
   pickupblock();
   delay(500);
