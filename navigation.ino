@@ -1,7 +1,7 @@
 #include <Adafruit_MotorShield.h>
-// #include "Arduino.h"
-// #include "Wire.h"
-// #include "DFRobot_VL53L0X.h"
+#include "Arduino.h"
+#include "Wire.h"
+#include "DFRobot_VL53L0X.h"
 
 // Create the motor shield object with the default I2C address
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -19,17 +19,14 @@ unsigned long startLEDMillis;
 // Global flags for block status
 int blockNumber = 0;
 int pickup = 0;
-int blockType = 0;    // all green for testing
-
-// Global flag for wall in open area
-int wall = 1;           // 0 means past the wall, can start finding block
+int blockType = 1;    
+int inOpenArea = 0;
 
 // Global flags for motor status
 int RightMotorSpeed = 0;
 int* RightMotorSpeedPter = &RightMotorSpeed;
 int LeftMotorSpeed = 0;
 int* LeftMotorSpeedPter = &LeftMotorSpeed;
-
 
 // Set line sensors to input pins
 int lineleftPin = 2;
@@ -42,10 +39,11 @@ int valSideRight = digitalRead(lineSideRightPin); // read side right input value
 int valSideLeft = digitalRead(lineSideLeftPin); // read side left input value
 // finger covering line sensor, line sensor lighting up means a reading of 1
 
-// Set ultrasonic and ToF sensors to input pins
-// int usDistance;
-// int tofDistance;
-//
+// // Set ultrasonic and ToF sensors to input pins
+// DFRobot_VL53L0X sensor; 
+// int usDistance = sensor.getDistance();
+// int tofDistance = sensor.getDistance();
+
 
 
 // array of routes; does not include backing out in free space; does not include U-turns after picking block up in line area
@@ -82,6 +80,7 @@ const int HighSpeed = 250;            // adjustment on straight line
 const int NormalSpeed = 200;          // straight line
 const int LowSpeed = 50;               // adjustment on straight line
 const int RotationSpeed = 180;        // rotation
+const int OpenAreaSpeed = 100;        // slow speed in open area
 
 // Junction to outpost (green red area) time in milliseconds
 int junctionOutpostTime = 250 / NormalSpeed * 1000; // change arbitrary constant '400' // Higher normal speed means shorter time 
@@ -101,7 +100,10 @@ void setup() {
   pinMode(lineSideRightPin, INPUT); 
   pinMode(lineSideLeftPin, INPUT); 
   pinMode(blueLED, OUTPUT);
-
+  // Wire.begin();
+  // sensor.begin(0x50);
+  // sensor.setMode(sensor.eContinuous,sensor.eHigh);
+  // sensor.start();
 
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
     Serial.println("Could not find Motor Shield. Check wiring.");
@@ -212,11 +214,26 @@ void stopmoving() {
   delay(30);
 }
 
+void rotateright90degrees() {
+    updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
+    updaterightmotorspeed(RotationSpeed);
+    motor_left->run(FORWARD);
+    motor_right->run(BACKWARD);
+
+    while (valSideLeft == 0 || valSideRight == 0) {   // rotate until side sensors are both white
+      // Serial.println("Rotating until front sensors are both white");
+      valSideLeft = digitalRead(lineleftPin); // read left input value
+      valSideRight = digitalRead(linerightPin); // read right input value
+      delay(5);
+    }
+    motor_left->run(FORWARD);
+    motor_right->run(FORWARD);
+    delay(30);
+}
+
 void gostraight() {   // walk in straight line 
   updatelinesensors();
-
-  // update millis for blinking
-  currentLEDMillis = millis();
+  currentLEDMillis = millis();      // update millis for blinking
 
   if(currentLEDMillis - startLEDMillis > 250) {
     blueLEDStatus = !blueLEDStatus;
@@ -224,14 +241,17 @@ void gostraight() {   // walk in straight line
     startLEDMillis = millis();
   }
 
-
   if(valLeft == 1 && valRight == 1) { // both white
     // Serial.println("Go straight");
     motor_left->run(FORWARD);
-    motor_right->run(FORWARD);
+    motor_right->run(FORWARD);  
+    if (inOpenArea == 1) {                     // in open area, detecting block while following white line
+    updateleftmotorspeed(OpenAreaSpeed);
+    updaterightmotorspeed(OpenAreaSpeed);
+    } else {
     updateleftmotorspeed(NormalSpeed);
     updaterightmotorspeed(NormalSpeed);
-    // Serial.println(*LeftMotorSpeedPter);
+    }
 
   } else if(valLeft == 0 && valRight == 1) { // left is black right is white
     // Serial.println("Turn right");
@@ -252,12 +272,15 @@ void gostraight() {   // walk in straight line
   } else { // both black
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
+    if (inOpenArea == 1) {                           // in open area, approaching block, in black area no line
+    updateleftmotorspeed(OpenAreaSpeed);
+    updaterightmotorspeed(OpenAreaSpeed);
+    } else {
     updateleftmotorspeed(NormalSpeed);
     updaterightmotorspeed(NormalSpeed);
+    }
   }
   delay(10);        // we need delay for the motor to respond
-  // digitalWrite(blueLED, LOW); // blinking blue led
-
 }
 
 void forwardawhile(int time) {
@@ -270,41 +293,39 @@ void forwardawhile(int time) {
     stopmoving(); 
 }
 
-void findandapproachblock() {
+// void findandapproachblock() {
+//   inOpenArea = 1;         // tells gostraight() that we are in open area so need to move slowly
+//   int tofDistance = sensor.getDistance();
 
-  /*
-  while (tofDistance > x) {         x: distance of wall to sensor, to be tested
-    gostraight();
-    updatelinesensors();
-    update tofDistance
-  }
-  forwardawhile();
+//   while (tofDistance > 1000) {         //x: distance of wall, to be tested
+//     gostraight();
+//     int tofDistance = sensor.getDistance();
+//   }
+//   forwardawhile(30);                // leave wall by a sufficient distance (moves slowly)
+//   while (tofDistance > 1000) {         //y: distance of back wall of building minus block, to be tested
+//     gostraight();
+//     int tofDistance = sensor.getDistance();
+//   }
+//   forwardawhile(30);
+//   rotateright90degrees();
+//   forwardawhile(200);   // goes forward until reach back wall  
+//   inOpenArea = 0;
+// }
 
-  while (tofDistance > y) {         y: distance of back wall of building to sensor, to be tested
-    gostraight();
-    updatelinesensors();
-    update tofDistance
-  }
-  turn right until both side sensors detect white?
-  forwardawhile();   ?? go straight inside forwardawhile() requires white line           // until reaches back wall
+// void returntoline() {
+//   // go backward until one of the side sensors touch white, turn left
+//   updatelinesensors();
 
-  */
+//   motor_left->run(BACKWARD);
+//   motor_right->run(BACKWARD);
+//   updateleftmotorspeed(NormalSpeed);
+//   updaterightmotorspeed(NormalSpeed);
+//   while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
+//     updatelinesensors();
+//   }
 
-}
-
-void returntoline() {
-  // go backward until one of the side sensors touch white, turn left
-  updatelinesensors();
-
-  while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
-    motor_left->run(BACKWARD);
-    motor_right->run(BACKWARD);
-    updateleftmotorspeed(NormalSpeed);
-    updaterightmotorspeed(NormalSpeed);
-  }
-
-  junctionrotation('L');              // turn left to go back on white line
-}
+//   junctionrotation('L');              // turn left to go back on white line
+// }
 
 void routefollow(const char route[], int numberOfJunctions) {
   
@@ -315,57 +336,54 @@ void routefollow(const char route[], int numberOfJunctions) {
     }
     delay(50);                                      // make sure the front sensors are sufficiently far away from junction
     stopmoving();
-
-    // Serial.println("current junction");
-    // Serial.println(route[currentJunction]);
     junctionrotation(route[currentJunction]);       // arrives junction, rotate
   }
 
   if (pickup) {
     forwardawhile(junctionOutpostTime);
-  } 
-  if ((blockNumber == 2 || blockNumber == 3) && !pickup) { // in open area
-    forwardawhile(junctionOutpostTime);
-    findandapproachblock();
-    identifyblock();
-    liftblock();
-    returntoline();
-  } 
-  if ((blockNumber == 0 || blockNumber == 1) && !pickup) {
+  } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {
     // search for end of line
     while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
       gostraight();                                   
     } 
     delay(80);                                       // make sure it goes further away from the white line
     stopmoving(); 
-  }
-  if ((blockNumber == 4) && !pickup) {
+  } else if ((blockNumber == 4) && !pickup) {
     // stop at finish box
     forwardawhile(junctionFinishTime);
   }
+
+  return;
 
 
 }
 
 void liftblock() {
   pickup = 1;
+  Serial.print("lift block");
   return;
 }
 
 void release() {
   pickup = 0;
+  Serial.println("release block");
   return;
 }
 
 void identifyblock() {
   blockNumber += 1;
-  blockType = 0;
+  blockType = 1;
   return;
 }
 
 void loop() {
   // in C++, size of char = number of letters + 1
   routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
+
+  // Serial.println("-------------------------");
+  // Serial.println(blockNumber);
+  // Serial.println(pickup);
+  // Serial.println(routePtr);
 
   if (routePtr < 0) {                   // from start to block 1
     routefollow("LR", 2);
@@ -379,14 +397,20 @@ void loop() {
       stopmoving();
     }    
   } else {
-    if (!pickup || blockNumber == 1 || blockNumber == 2) { // use flag for this line 
-      junctionrotation('R');
+    if (!pickup || blockNumber == 1 || blockNumber == 2) {           // u turn to leave outpost and residential area
+      junctionrotation('R');                                         
     }
     int numberOfJunctions = sizeOfRoutes[routePtr];
     routefollow(routes[routePtr], numberOfJunctions);
-    if (pickup) {
+
+    if ((blockNumber == 2 || blockNumber == 3) && !pickup) {         // arrived open area
+      // findandapproachblock(); 
+      identifyblock();
+      liftblock();
+      // returntoline();
+    } else if (pickup) {                                             // arrived outpost
       release();
-    } else {
+    } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {  // arrived residential area                                                         
       identifyblock();
       liftblock();
     }
