@@ -12,10 +12,9 @@ int servoEndAngle = 90; // initial end angle
 // Define analog input pin for the ultrasonic sensor
 const int sensityPin = A0;
 
-// Define LED setup to be used upon block detection, boolean flag for blockType and distance that determines solid/foam 
+// Define LED setup to be used upon block detection, boolean flag for distance that determines solid/foam 
 const int redLED = 2;             // Pin number, change if necessary
 const int greenLED = 3;           // Pin number, change if necessary
-const bool blockType = 0;         // 0: foam, 1 solid
 const int thresholdDistance = 3;  // Change this based on electrical/mechanical team's recommendation
 
 void setup() {
@@ -37,12 +36,11 @@ void lightled(int ledPin) {
 }
 
 // Function to detect the type of block based on distance
-void detectblock(float distance, bool blockType) {
+void detectblock(float distance) {
   if (distance >= 0 && distance <= thresholdDistance) {
     // SOLID block
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
-    blockType = 1; // update blockType flag
     lightled(redLED);
     if (!pickup) {
       // Pickup the block
@@ -98,7 +96,7 @@ void loop() {
 
   // Determine the type of block based on the distance reading
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
-//  detectblock(ultrasonic_dist, blockType);
+//  detectblock(ultrasonic_dist);
 
   liftblock();
   delay(500);
