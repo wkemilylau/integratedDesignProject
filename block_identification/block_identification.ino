@@ -10,7 +10,7 @@ int servoEndAngle = 90; // initial end angle
 #define adcSolution 1023.0  // ADC accuracy of Arduino UNO is 10-bit
 
 // Define analog input pin for the ultrasonic sensor
-const int ultrasonicSensorPin = A0;
+const int usSensorPin = A0;
 
 // Define LED setup to be used upon block detection, boolean flag for distance that determines solid/foam 
 const int redLED = 2;             // Pin number, change if necessary
@@ -25,7 +25,7 @@ void setup() {
 }
 
 // Declare variables for distance and ultrasonic sensor reading
-float ultrasonic_dist, ultrasonic_sensor_reading;
+float usDistance, usReading;
 
 // Function to control LED lighting
 void lightled(int ledPin) { 
@@ -89,14 +89,14 @@ void releaseblock() {
 
 void loop() {
   // Read the value from the sensor
-  ultrasonic_sensor_reading = analogRead(ultrasonicSensorPin);
+  usReading = analogRead(usSensorPin);
 
   // Convert sensor reading to distance using a linear mapping
-  ultrasonic_dist = ultrasonic_sensor_reading * maxRange / adcSolution;
+  usDistance = usReading * maxRange / adcSolution;
 
   // Determine the type of block based on the distance reading
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
-//  detectblock(ultrasonic_dist);
+//  detectblock(usDistance);
 
   liftblock();
   delay(500);
