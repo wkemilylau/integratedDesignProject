@@ -2,8 +2,8 @@
 
 Servo myservo; // create servo object to control a servo
 bool pickup = 0; // boolean to track pickup state
-int startAngle = 180; // initial start angle
-int endAngle = 0; // initial end angle
+int startAngle = 0; // initial start angle
+int endAngle = 90; // initial end angle
 
 // Define constants for maximum range and ADC solution accuracy
 #define maxRange 520        // The max measurement value of the module is 520cm (a little bit longer than the effective max range)
@@ -22,7 +22,7 @@ void setup() {
   Serial.begin(9600);         // Initialize Serial communication
   pinMode(ledRed, OUTPUT);    // Set Pin 2 as output for RED led (SOLID block)
   pinMode(ledGreen, OUTPUT);  // Set Pin 3 as output for GREEN led (FOAM block)
-  myservo.attach(3);          // attaches the servo on pin 9 to the servo object
+  myservo.attach(9);          // attaches the servo on pin 9 to the servo object
 }
 
 // Declare variables for distance and sensor reading
@@ -98,9 +98,10 @@ void loop() {
 
   // Determine the type of block based on the distance reading
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
-  detectblock(dist, blockType);
+//  detectblock(dist, blockType);
 
   pickupblock();
+  delay(500);
   releaseblock();
 
   // Delay for a short period before the next iteration
