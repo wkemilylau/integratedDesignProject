@@ -29,10 +29,10 @@ void setup() {
 float ultrasonic_dist, sensity;
 
 // Function to control LED lighting
-void lightled(int ledColour) { 
-  digitalWrite(ledColour, HIGH);  // Turn on LED
+void lightled(int ledPin) { 
+  digitalWrite(ledPin, HIGH);  // Turn on LED
   delay(6000);
-  digitalWrite(ledColour, LOW);   // Turn off LED
+  digitalWrite(ledPin, LOW);   // Turn off LED
   delay(2000);
 }
 
@@ -46,7 +46,7 @@ void detectblock(float distance, bool blockType) {
     lightled(redLED);
     if (!pickup) {
       // Pickup the block
-      pickupblock();
+      liftblock();
     }
   } else if (distance > thresholdDistance && distance <= thresholdDistance + 3) {
     // FOAM block
@@ -69,7 +69,7 @@ void detectblock(float distance, bool blockType) {
   }
 }
 
-void pickupblock() {
+void liftblock() {
   pickup = 1; // Set the boolean to true indicating that the block is picked up
 
   // Rotate the servo from servoStartAngle to servoEndAngle
@@ -100,7 +100,7 @@ void loop() {
   // Possible improvements: amplify signal to allow a larger range of 'safe' values for correct detection?
 //  detectblock(ultrasonic_dist, blockType);
 
-  pickupblock();
+  liftblock();
   delay(500);
   releaseblock();
 
