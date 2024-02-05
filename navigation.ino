@@ -17,7 +17,7 @@ unsigned long currentLEDMillis;
 unsigned long startLEDMillis;
 
 // Global flags for block status
-bool blockNumber = 0;
+int blockNumber = 0;
 bool pickup = 0;
 bool blockType = 0;    
 bool inOpenArea = 0;
@@ -225,16 +225,20 @@ void stopmoving() {
 }
 
 void rotateright90degrees() {
+    Serial.println("Rotate right");
     updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
     updaterightmotorspeed(RotationSpeed);
     motor_left->run(FORWARD);
     motor_right->run(BACKWARD);
 
-    while (valSideLeft == 0 || valSideRight == 0) {   // rotate until side sensors are both white
+    updatelinesensors();
+
+    while (valSideLeft == 0 && valSideRight == 0) {   // rotate until side sensors are both white
       // Serial.println("Rotating until front sensors are both white");
-      valSideLeft = digitalRead(lineleftPin); // read left input value
-      valSideRight = digitalRead(linerightPin); // read right input value
+      valSideLeft = digitalRead(lineSideLeftPin); // read left input value
+      valSideRight = digitalRead(lineSideRightPin); // read right input value
       delay(5);
+      Serial.println("not yet reach target");
     }
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
@@ -294,6 +298,7 @@ void gostraight() {   // walk in straight line
 }
 
 void forwardawhile(int time) {
+    Serial.println("forward a while");
     unsigned long currentMotorMillis = millis();
     unsigned long startMotorMillis = millis();
     while((currentMotorMillis - startMotorMillis) < time) {
@@ -309,12 +314,13 @@ void findandapproachblock() {
 
   while (tofDistance > 1000) {         //x: distance of wall, to be tested
     gostraight();
-    int tofDistance = sensor.getDistance();
+    tofDistance = sensor.getDistance();
   }
   forwardawhile(30);                // leave wall by a sufficient distance (moves slowly)
-  while (tofDistance > 1000) {         //y: distance of back wall of building minus block, to be tested
+  tofDistance = sensor.getDistance();
+  while (tofDistance > 300) {         //y: distance of back wall of building minus block, to be tested
     gostraight();
-    int tofDistance = sensor.getDistance();
+    tofDistance = sensor.getDistance();
   }
   forwardawhile(30);
   rotateright90degrees();
@@ -387,39 +393,46 @@ void identifyblock() {
 }
 
 void loop() {
-  // in C++, size of char = number of letters + 1
-  routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
+  // // in C++, size of char = number of letters + 1
+  // routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
 
-  if (routePtr < 0) {                   // from start to block 1
-    routefollow("LR", 2);
-    identifyblock();
-    liftblock();
-  } else if (routePtr >= 14) {          // return to finish
-    junctionrotation('R');
-    int numberOfJunctions = sizeOfRoutes[routePtr];
-    routefollow(routes[routePtr], numberOfJunctions);
-    while (1) {                         // stop after finish
-      stopmoving();
-    }    
-  } else {
-    if (!pickup || blockNumber == 1 || blockNumber == 2) {           // u turn to leave outpost and residential area
-      junctionrotation('R');                                         
-    }
-    int numberOfJunctions = sizeOfRoutes[routePtr];
-    routefollow(routes[routePtr], numberOfJunctions);
+  // Serial.println("-------------------------");
+  // Serial.println(blockNumber);
+  // Serial.println(pickup);
+  // Serial.println(routePtr);
 
-    if ((blockNumber == 2 || blockNumber == 3) && !pickup) {         // arrived open area
-      findandapproachblock(); 
-      identifyblock();
-      liftblock();
-      returntoline();
-    } else if (pickup) {                                             // arrived outpost
-      release();
-    } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {  // arrived residential area                                                         
-      identifyblock();
-      liftblock();
-    }
+  // if (routePtr < 0) {                   // from start to block 1
+  //   routefollow("LR", 2);
+  //   identifyblock();
+  //   liftblock();
+  // } else if (routePtr >= 14) {          // return to finish
+  //   junctionrotation('R');
+  //   int numberOfJunctions = sizeOfRoutes[routePtr];
+  //   routefollow(routes[routePtr], numberOfJunctions);
+  //   while (1) {                         // stop after finish
+  //     stopmoving();
+  //   }    
+  // } else {
+  //   if (!pickup || blockNumber == 1 || blockNumber == 2) {           // u turn to leave outpost and residential area
+  //     junctionrotation('R');                                         
+  //   }
+  //   int numberOfJunctions = sizeOfRoutes[routePtr];
+  //   routefollow(routes[routePtr], numberOfJunctions);
+
+  //   if ((blockNumber == 2 || blockNumber == 3) && !pickup) {         // arrived open area
+  //     findandapproachblock(); 
+  //     identifyblock();
+  //     liftblock();
+  //     returntoline();
+  //   } else if (pickup) {                                             // arrived outpost
+  //     release();
+  //   } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {  // arrived residential area                                                         
+  //     identifyblock();
+  //     liftblock();
+  //   }
+  // }
+
+  while (1) {
+    stopmoving();
   }
-
-  
 }
