@@ -19,7 +19,7 @@ unsigned long startLEDMillis;
 // Global flags for block status
 int blockNumber = 0;
 bool pickup = 0;
-bool blockType = 0;    
+bool blockType = 1;    
 bool inOpenArea = 0;
 
 // Global flags for motor status
@@ -27,6 +27,18 @@ int RightMotorSpeed = 0;
 int* RightMotorSpeedPter = &RightMotorSpeed;
 int LeftMotorSpeed = 0;
 int* LeftMotorSpeedPter = &LeftMotorSpeed;
+
+// Delay time in ms for rotateright90degrees
+const int rotate90Offset = 180;
+
+// Time between line and back wall in open area
+const int lineToBackWall = 2000;
+
+// Distances in open area
+const int sideWallDistance = 300;
+const int backWallDistance = 510;                   // value between back wall and front face of block
+const int leaveWallDistance = 2000;
+const int sensorWheelDistance = 700;
 
 // Set line sensors to input pins
 int lineleftPin = 2;
@@ -65,14 +77,14 @@ const char routes[16][6] = {
           "SSL",              // 11: red to block 4
           "RLS",              // 12: block 4 to green
           "LSRS",             // 13: block 4 to red
-          "RSR",              // 14: green to finish
-          "LL"};              // 15: red to finish
+          "RSRS",              // 14: green to finish
+          "LLS"};              // 15: red to finish
       // no need junctionrotation('R') (u turn): 
 
   // REMEMBER TO CHANGE SIZEOFROUTES ARRAY AFTER CHANGING ROUTES
 
 // number of junctions of each route, used when passing as second argument to routefollow()
-const int sizeOfRoutes[16] = {2,3,4,3,4,3,3,5,5,2,3,3,3,4,3,2};
+const int sizeOfRoutes[16] = {2,3,4,3,4,3,3,5,5,2,3,3,3,4,4,3};
 int routePtr;
 
 // Set speed constants
@@ -86,7 +98,7 @@ const int OpenAreaSpeed = 100;        // slow speed in open area
 int junctionOutpostTime = 250 / NormalSpeed * 1000; // change arbitrary constant '400' // Higher normal speed means shorter time 
 
 // Junction to finish box time in milliseconds
-int junctionFinishTime = 550 / NormalSpeed * 1000;
+int junctionFinishTime = 200 / NormalSpeed * 1000;
 
 // Leave junction time (make sure junction is not detected twice)
 int leaveJunctionTime = 500;
@@ -240,6 +252,7 @@ void rotateright90degrees() {
       delay(5);
       Serial.println("not yet reach target");
     }
+    delay(rotate90Offset);
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     delay(30);
@@ -312,20 +325,22 @@ void findandapproachblock() {
   inOpenArea = 1;         // tells gostraight() that we are in open area so need to move slowly
   int tofDistance = sensor.getDistance();
 
-  while (tofDistance > 1000) {         //x: distance of wall, to be tested
+  while (tofDistance > sideWallDistance) {         //x: distance of wall, to be tested
     gostraight();
     tofDistance = sensor.getDistance();
   }
-  forwardawhile(30);                // leave wall by a sufficient distance (moves slowly)
+  stopmoving();   // indicates wall detected
+  delay(1000);
+  forwardawhile(leaveWallDistance);                // leave wall by a sufficient distance (moves slowly)
   tofDistance = sensor.getDistance();
-  while (tofDistance > 300) {         //y: distance of back wall of building minus block, to be tested
+  while (tofDistance > backWallDistance) {         //y: distance of back wall of building minus block
     gostraight();
     tofDistance = sensor.getDistance();
   }
-  forwardawhile(30);
+  forwardawhile(sensorWheelDistance);    // (to be tested) distance between sensor and center of rotation
   rotateright90degrees();
-  forwardawhile(200);   // goes forward until reach back wall  
   inOpenArea = 0;
+  forwardawhile(lineToBackWall);   // goes forward until reach back wall  
 }
 
 void returntoline() {
@@ -388,7 +403,7 @@ void release() {
 
 void identifyblock() {
   blockNumber += 1;
-  blockType = 0;
+  blockType = 1;
   return;
 }
 
@@ -433,6 +448,7 @@ void loop() {
       findandapproachblock(); 
       identifyblock();
       liftblock();
+      delay(2000);
       returntoline();
     } else if (pickup) {                                             // arrived outpost
       release();
@@ -442,7 +458,5 @@ void loop() {
     }
   }
 
-  // while (1) {
-  //   stopmoving();
-  // }
+
 }
