@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
   Serial.println("Line following test");
@@ -44,6 +45,19 @@ void loop() {
   // // in C++, size of char = number of letters + 1
   // start
 
+=======
+#include "/Users/sushant/Downloads/IDP/main/block_identification/block_identification.h"
+#include "/Users/sushant/Downloads/IDP/main/block_identification/block_identification.cpp"
+#include <Arduino.h>
+
+void setup() {
+  Serial.begin(9600);
+  hello();
+}
+
+void loop() {
+  // in C++, size of char = num/Users/sushant/Desktop/IDP/libraries/block_identification/block_identification.hber of letters + 1
+>>>>>>> Stashed changes
   routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
 
   // Serial.println("-------------------------");
@@ -92,4 +106,10 @@ void loop() {
   }
 
 
+<<<<<<< Updated upstream
 }
+=======
+  delay(5000);
+  
+}
+>>>>>>> Stashed changes

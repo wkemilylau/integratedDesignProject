@@ -1,7 +1,9 @@
 #include "block_identification.h"
 
+
+
 // Function to control LED lighting
-void lightled(int ledPin) { 
+void lightled(int ledPin) {
   digitalWrite(ledPin, HIGH);  // Turn on LED
   delay(6000);
   digitalWrite(ledPin, LOW);   // Turn off LED
@@ -59,3 +61,8 @@ void releaseblock() {
     delay(15);
   }
 }
+
+void hello() {
+  Serial.println("Hello from block identification library!");
+}
+

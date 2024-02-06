@@ -353,7 +353,10 @@ void returntoline() {
   while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
     updatelinesensors();
   }
+<<<<<<< Updated upstream
   stopmoving();
+=======
+>>>>>>> Stashed changes
 
   junctionrotation('L');              // turn left to go back on white line
 }
