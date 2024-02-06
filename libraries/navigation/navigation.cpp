@@ -1,5 +1,6 @@
 #include "navigation.h"
 
+
 void updaterightmotorspeed(int NewRightMotorSpeed) {    // update right motor speed when it is different from the current speed
   if (NewRightMotorSpeed == *RightMotorSpeedPter) {
     return;
@@ -78,7 +79,6 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     stopmoving();
-    delay(30);
 
     // Serial.println("Arrived side branch");
 
@@ -93,17 +93,22 @@ void stopmoving() {
 }
 
 void rotateright90degrees() {
+    Serial.println("Rotate right");
     updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
     updaterightmotorspeed(RotationSpeed);
     motor_left->run(FORWARD);
     motor_right->run(BACKWARD);
 
-    while (valSideLeft == 0 || valSideRight == 0) {   // rotate until side sensors are both white
+    updatelinesensors();
+
+    while (valSideLeft == 0 && valSideRight == 0) {   // rotate until side sensors are both white
       // Serial.println("Rotating until front sensors are both white");
-      valSideLeft = digitalRead(lineleftPin); // read left input value
-      valSideRight = digitalRead(linerightPin); // read right input value
+      valSideLeft = digitalRead(lineSideLeftPin); // read left input value
+      valSideRight = digitalRead(lineSideRightPin); // read right input value
       delay(5);
+      Serial.println("not yet reach target");
     }
+    delay(rotate90Offset);
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     delay(30);
@@ -113,7 +118,7 @@ void gostraight() {   // walk in straight line
   updatelinesensors();
   currentLEDMillis = millis();      // update millis for blinking
 
-  if(currentLEDMillis - startLEDMillis > 250) {
+  if(currentLEDMillis - startLEDMillis > 250) {             // 250 ms --> 2 Hz blinking rate
     blueLEDStatus = !blueLEDStatus;
     digitalWrite(blueLED, blueLEDStatus);
     startLEDMillis = millis();
@@ -162,6 +167,7 @@ void gostraight() {   // walk in straight line
 }
 
 void forwardawhile(int time) {
+    Serial.println("forward a while");
     unsigned long currentMotorMillis = millis();
     unsigned long startMotorMillis = millis();
     while((currentMotorMillis - startMotorMillis) < time) {
@@ -171,39 +177,43 @@ void forwardawhile(int time) {
     stopmoving(); 
 }
 
-// void findandapproachblock() {
-//   inOpenArea = 1;         // tells gostraight() that we are in open area so need to move slowly
-//   int tofDistance = sensor.getDistance();
+void findandapproachblock() {
+  inOpenArea = 1;         // tells gostraight() that we are in open area so need to move slowly
+  int tofDistance = sensor.getDistance();
 
-//   while (tofDistance > 1000) {         //x: distance of wall, to be tested
-//     gostraight();
-//     int tofDistance = sensor.getDistance();
-//   }
-//   forwardawhile(30);                // leave wall by a sufficient distance (moves slowly)
-//   while (tofDistance > 1000) {         //y: distance of back wall of building minus block, to be tested
-//     gostraight();
-//     int tofDistance = sensor.getDistance();
-//   }
-//   forwardawhile(30);
-//   rotateright90degrees();
-//   forwardawhile(200);   // goes forward until reach back wall  
-//   inOpenArea = 0;
-// }
+  while (tofDistance > sideWallDistance) {         //x: distance of wall, to be tested
+    gostraight();
+    tofDistance = sensor.getDistance();
+  }
+  stopmoving();   // indicates wall detected
+  delay(1000);
+  forwardawhile(leaveWallDistance);                // leave wall by a sufficient distance (moves slowly)
+  tofDistance = sensor.getDistance();
+  while (tofDistance > backWallDistance) {         //y: distance of back wall of building minus block
+    gostraight();
+    tofDistance = sensor.getDistance();
+  }
+  forwardawhile(sensorWheelDistance);    // (to be tested) distance between sensor and center of rotation
+  rotateright90degrees();
+  inOpenArea = 0;
+  forwardawhile(lineToBackWall);   // goes forward until reach back wall  
+}
 
-// void returntoline() {
-//   // go backward until one of the side sensors touch white, turn left
-//   updatelinesensors();
+void returntoline() {
+  // go backward until one of the side sensors touch white, turn left
+  updatelinesensors();
 
-//   motor_left->run(BACKWARD);
-//   motor_right->run(BACKWARD);
-//   updateleftmotorspeed(NormalSpeed);
-//   updaterightmotorspeed(NormalSpeed);
-//   while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
-//     updatelinesensors();
-//   }
+  motor_left->run(BACKWARD);
+  motor_right->run(BACKWARD);
+  updateleftmotorspeed(NormalSpeed);
+  updaterightmotorspeed(NormalSpeed);
+  while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
+    updatelinesensors();
+  }
+  stopmoving();
 
-//   junctionrotation('L');              // turn left to go back on white line
-// }
+  junctionrotation('L');              // turn left to go back on white line
+}
 
 void routefollow(const char route[], int numberOfJunctions) {
   
