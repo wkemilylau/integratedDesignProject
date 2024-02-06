@@ -1,8 +1,66 @@
+void setup() {
+  Serial.begin(9600);           // set up Serial library at 9600 bps
+  Serial.println("Line following test");
+  
+  // TOF DISTANCE SENSOR
+  // join i2c bus (address optional for master)
+  Wire.begin();
+  // Set I2C sub-device address
+  sensor.begin(0x50);
+  // Set to Back-to-back mode and high precision mode
+  sensor.setMode(sensor.eContinuous, sensor.eHigh);
+  // Laser rangefinder begins to work
+  sensor.start();
+
+  pinMode(lineleftPin, INPUT);
+  pinMode(linerightPin, INPUT); 
+  pinMode(lineSideRightPin, INPUT); 
+  pinMode(lineSideLeftPin, INPUT); 
+  pinMode(blueLED, OUTPUT);
+
+
+
+  if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
+    Serial.println("Could not find Motor Shield. Check wiring.");
+    while (1);
+  }
+  Serial.println("Motor Shield found.");
+
+  // Set the speed to start
+  motor_right->setSpeed(*RightMotorSpeedPter);
+  motor_left->setSpeed(*LeftMotorSpeedPter);
+  motor_right->run(FORWARD);
+  motor_left->run(FORWARD);
+
+  // turn on motor
+  motor_left->run(RELEASE);
+  motor_right->run(RELEASE); 
+
+  
+}
+
+
 void loop() {
-  // in C++, size of char = number of letters + 1
+  // // in C++, size of char = number of letters + 1
+  // start
+
   routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
+
+  // Serial.println("-------------------------");
+  // Serial.println(blockNumber);
+  // Serial.println(pickup);
+  // Serial.println(routePtr);
+
   if (routePtr < 0) {                   // from start to block 1
-    routefollow("LR", 2);
+
+    updatelinesensors();
+    while (valLeft == 0 || valRight == 0) {   // leave start block
+      gostraight();
+      delay(5);
+      updatelinesensors();
+    }
+
+    routefollow("SLR", 3);
     identifyblock();
     liftblock();
   } else if (routePtr >= 14) {          // return to finish
@@ -20,10 +78,11 @@ void loop() {
     routefollow(routes[routePtr], numberOfJunctions);
 
     if ((blockNumber == 2 || blockNumber == 3) && !pickup) {         // arrived open area
-      // findandapproachblock(); 
+      findandapproachblock(); 
       identifyblock();
       liftblock();
-      // returntoline();
+      delay(2000);
+      returntoline();
     } else if (pickup) {                                             // arrived outpost
       release();
     } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {  // arrived residential area                                                         
@@ -32,5 +91,5 @@ void loop() {
     }
   }
 
-  
+
 }
