@@ -1,4 +1,11 @@
-<<<<<<< Updated upstream
+#include "navigation/navigation.cpp"
+#include "navigation/navigation.h"
+#include "globalflags/globalflags.cpp"
+#include "globalflags/globalflags.h"
+#include "block_identification/block_identification.cpp"
+#include "block_identification/block_identification.h"
+#include "Arduino.h"
+
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
   Serial.println("Line following test");
@@ -18,7 +25,9 @@ void setup() {
   pinMode(lineSideRightPin, INPUT); 
   pinMode(lineSideLeftPin, INPUT); 
   pinMode(blueLED, OUTPUT);
-
+  pinMode(redLED, OUTPUT);    // Set Pin 2 as output for RED led (SOLID block)
+  pinMode(greenLED, OUTPUT);  // Set Pin 3 as output for GREEN led (FOAM block)
+  pincerServo.attach(pincerServoPin);
 
 
   if (!AFMS.begin()) {         // create with the default frequency 1.6KHz
@@ -36,28 +45,12 @@ void setup() {
   // turn on motor
   motor_left->run(RELEASE);
   motor_right->run(RELEASE); 
-
   
 }
 
-
 void loop() {
-  // // in C++, size of char = number of letters + 1
-  // start
+  // in C++, size of char = number of letters + 1
 
-=======
-#include "/Users/sushant/Downloads/IDP/main/block_identification/block_identification.h"
-#include "/Users/sushant/Downloads/IDP/main/block_identification/block_identification.cpp"
-#include <Arduino.h>
-
-void setup() {
-  Serial.begin(9600);
-  hello();
-}
-
-void loop() {
-  // in C++, size of char = num/Users/sushant/Desktop/IDP/libraries/block_identification/block_identification.hber of letters + 1
->>>>>>> Stashed changes
   routePtr = (blockNumber - 1) * 4 + !pickup * 2 + blockType;
 
   // Serial.println("-------------------------");
@@ -98,7 +91,7 @@ void loop() {
       delay(2000);
       returntoline();
     } else if (pickup) {                                             // arrived outpost
-      release();
+      releaseblock();
     } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {  // arrived residential area                                                         
       identifyblock();
       liftblock();
@@ -106,10 +99,4 @@ void loop() {
   }
 
 
-<<<<<<< Updated upstream
 }
-=======
-  delay(5000);
-  
-}
->>>>>>> Stashed changes
