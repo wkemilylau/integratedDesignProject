@@ -17,6 +17,9 @@ const int redLED = 2;             // Pin number, change if necessary
 const int greenLED = 3;           // Pin number, change if necessary
 const int thresholdDistance = 3;  // Change this based on electrical/mechanical team's recommendation
 
+// Declare variables for distance and ultrasonic sensor reading
+float usDistance, usReading;
+
 void setup() {
   Serial.begin(9600);         // Initialize Serial communication
   pinMode(redLED, OUTPUT);    // Set Pin 2 as output for RED led (SOLID block)
@@ -24,8 +27,7 @@ void setup() {
   pincerServo.attach(9);          // attaches the servo on pin 9 to the servo object
 }
 
-// Declare variables for distance and ultrasonic sensor reading
-float usDistance, usReading;
+
 
 // Function to control LED lighting
 void lightled(int ledPin) { 
