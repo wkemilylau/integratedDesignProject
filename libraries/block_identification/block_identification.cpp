@@ -12,7 +12,7 @@ void lightled(int ledPin) {
 
 // Function to detect the type of block based on distance
 void detectblock(float distance) {
-  if (distance >= 0 && distance <= thresholdDistance) {
+  if (distance >= 0 && distance <= solidUpperBound) {
     // SOLID block
     Serial.print(distance, 0);
     Serial.println("cm, SOLID block");
@@ -21,7 +21,7 @@ void detectblock(float distance) {
       // Pickup the block
       liftblock();
     }
-  } else if (distance > thresholdDistance && distance <= thresholdDistance + 3) {
+  } else if (distance > solidUpperBound && distance <= foamUpperBound) {
     // FOAM block
     Serial.print(distance, 0);
     Serial.println("cm, FOAM block");
