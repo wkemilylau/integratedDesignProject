@@ -222,7 +222,6 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     stopmoving();
-    delay(30);
 
     // Serial.println("Arrived side branch");
 
@@ -262,7 +261,7 @@ void gostraight() {   // walk in straight line
   updatelinesensors();
   currentLEDMillis = millis();      // update millis for blinking
 
-  if(currentLEDMillis - startLEDMillis > 250) {
+  if(currentLEDMillis - startLEDMillis > 250) {             // 250 ms --> 2 Hz blinking rate
     blueLEDStatus = !blueLEDStatus;
     digitalWrite(blueLED, blueLEDStatus);
     startLEDMillis = millis();
@@ -354,6 +353,7 @@ void returntoline() {
   while (valSideRight == 0 && valSideLeft == 0) {         // keep moving backward until either side sensor touches white
     updatelinesensors();
   }
+  stopmoving();
 
   junctionrotation('L');              // turn left to go back on white line
 }
