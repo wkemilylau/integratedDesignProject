@@ -61,8 +61,3 @@ void releaseblock() {
     delay(15);
   }
 }
-
-void hello() {
-  Serial.println("Hello from block identification library!");
-}
-
