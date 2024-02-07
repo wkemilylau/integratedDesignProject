@@ -7,5 +7,6 @@ int blockNumber = 0;
 bool pickup = 0;
 bool blockType = 0;    
 bool inOpenArea = 0;
+bool start = 0;
 
 #endif
