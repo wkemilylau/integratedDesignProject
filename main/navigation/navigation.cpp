@@ -30,7 +30,7 @@ void updatelinesensors() {
 
 void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 1 character
                                               // Direction == "R" means turn right, "L" means left, "S" (or other char) means straight line
-    // Serial.println("start to rotate");
+    Serial.println("junction rotation");
     
     updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
     updaterightmotorspeed(RotationSpeed);
@@ -114,7 +114,8 @@ void rotateright90degrees() {
     delay(30);
 }
 
-void gostraight() {   // walk in straight line 
+void gostraight() {   // walk in straight line
+  Serial.println("go straight");
   updatelinesensors();
   currentLEDMillis = millis();      // update millis for blinking
 
