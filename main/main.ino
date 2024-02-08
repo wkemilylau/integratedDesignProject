@@ -81,7 +81,7 @@ void loop() {
 
       routefollow("SLR", 3);
       identifyblock();
-      liftblock();
+
     } else if (routePtr >= 14) {          // return to finish
       junctionrotation('R');
       int numberOfJunctions = sizeOfRoutes[routePtr];
@@ -99,17 +99,15 @@ void loop() {
       if ((blockNumber == 2 || blockNumber == 3) && !pickup) {         // arrived open area
         findandapproachblock(); 
         identifyblock();
-        liftblock();
         delay(500);
         returntoline();
       } else if (pickup) {                                             // arrived outpost
         releaseblock();
       } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {  // arrived residential area                                                         
         identifyblock();
-        liftblock();
       }
     }
 
   }
-  
+
 }

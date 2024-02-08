@@ -1,3 +1,9 @@
+/* 
+Library for global flags
+Created by Emily Lau, Isaac Lam, February 2024
+IDP
+*/
+
 #ifndef GLOBALFLAGS_H
 #define GLOBALFLAGS_H
 #include "Arduino.h"

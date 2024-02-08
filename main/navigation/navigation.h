@@ -1,3 +1,8 @@
+/*
+Library for navigation
+Created by Emily Lau, Isaac Lam, February 2024
+IDP
+*/
 #ifndef NAVIGATION_H
 #define NAVIGATION_H
 
@@ -105,7 +110,7 @@ int junctionOutpostTime = 250 / NormalSpeed * 1000; // change arbitrary constant
 int junctionFinishTime = 200 / NormalSpeed * 1000;
 
 // Leave junction time (make sure junction is not detected twice)
-int leaveJunctionTime = 500;
+int leaveJunctionTime = 300;
 
 // functions
 void updaterightmotorspeed(int NewRightMotorSpeed);

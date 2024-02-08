@@ -8,7 +8,7 @@
 
 Servo pincerServo; // create servo object to control a servo
 int servoStartAngle = 0; // initial start angle
-int servoEndAngle = 120; // initial end angle
+int servoEndAngle = 90; // initial end angle
 const int pincerServoPin = 4;
 
 // Define constants for maximum range and ADC solution accuracy

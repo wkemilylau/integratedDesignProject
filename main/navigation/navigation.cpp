@@ -231,12 +231,14 @@ void routefollow(const char route[], int numberOfJunctions) {
   if (pickup) {
     forwardawhile(junctionOutpostTime);
   } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {
-    // search for end of line
-    while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
-      gostraight();                                   
-    } 
-    delay(80);                                       // make sure it goes further away from the white line
-    stopmoving(); 
+    // // search for end of line
+    // while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
+    //   gostraight();                                   
+    // } 
+    // delay(80);                                       // make sure it goes further away from the white line
+    // stopmoving(); 
+
+    forwardawhile(700);
   } else if ((blockNumber == 4) && !pickup) {
     // stop at finish box
     forwardawhile(junctionFinishTime);
