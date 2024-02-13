@@ -17,33 +17,32 @@ void identifyblock() {
 
   blockNumber += 1;   // update block number
 
-  if (usDistance >= 0 && usDistance <= solidUpperBound) {
+  if (usDistance <= solidUpperBound) {
     // SOLID block
-    Serial.print(usDistance, 0);
-    Serial.println("cm, SOLID block");
+
     lightled(redLED);
 
-    blockType = 1;        // update block type    
+    blockType = 1;        // update block type
+
+    // pickup = 1;          // ********UNCOMMENT THIS IF WE ARE GIVING UP SOLID BLOCK*********
 
   } else if (usDistance > solidUpperBound && usDistance <= foamUpperBound) {
     // FOAM block
-    Serial.print(usDistance, 0);
-    Serial.println("cm, FOAM block");
+
     lightled(greenLED);
 
     blockType = 0;        // update block type
 
   } else {
-    // This code can be used as failsafe in the future, in case we try to handle the case where dist > 6.
-    Serial.print(usDistance, 0);
-    Serial.println("cm, FOAM block");
+    // This code can be used as failsafe in the future, in case we try to handle the case where dist > foamUpperBound.
+
     lightled(greenLED);
 
     blockType = 0;        // update block type
 
   }
 
-  if (!pickup) {
+  if (!pickup) {  
     liftblock();        // lift block after identification
   }
 }

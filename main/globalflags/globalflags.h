@@ -9,9 +9,9 @@ IDP
 #include "Arduino.h"
 
 // Global flags for block status
-int blockNumber = 0;
-bool pickup = 0;
-bool blockType = 0;    
+int blockNumber = 0;        // updates after identifying and picking up block
+bool pickup = 0; 
+bool blockType = 0;         // 0 for foam, 1 for solid
 bool inOpenArea = 0;
 bool start = 0;
 

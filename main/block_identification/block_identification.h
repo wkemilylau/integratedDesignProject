@@ -8,7 +8,7 @@
 
 Servo pincerServo; // create servo object to control a servo
 int servoStartAngle = 0; // initial start angle
-int servoEndAngle = 90; // initial end angle
+int servoEndAngle = 60; // initial end angle
 const int pincerServoPin = 4;
 
 // Define constants for maximum range and ADC solution accuracy
@@ -21,8 +21,8 @@ const int usSensorPin = A0;
 // Define LED setup to be used upon block detection, boolean flag for distance that determines solid/foam
 const int redLED = 10;             // Pin number, change if necessary
 const int greenLED = 11;           // Pin number, change if necessary
-const int solidUpperBound = 3;
-const int foamUpperBound = 6;
+const float solidUpperBound = 4.0;
+const float foamUpperBound = 20.0;
 
 
 void lightled(int ledPin);

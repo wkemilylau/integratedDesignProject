@@ -25,12 +25,6 @@ bool blueLEDStatus = 0;
 unsigned long currentLEDMillis;
 unsigned long startLEDMillis;
 
-// // Global flags for block status
-// int blockNumber = 0;
-// bool pickup = 0;
-// bool blockType = 1;    
-// bool inOpenArea = 0;
-
 // Global flags for motor status
 int RightMotorSpeed = 0;
 int* RightMotorSpeedPter = &RightMotorSpeed;
@@ -38,16 +32,18 @@ int LeftMotorSpeed = 0;
 int* LeftMotorSpeedPter = &LeftMotorSpeed;
 
 // Delay time in ms for rotateright90degrees
-const int rotate90Offset = 180;
+const int rotate90Offset = 120;
 
-// Time between line and back wall in open area
-const int lineToBackWall = 2000;
+// forwardawhile Time between line and back wall in open area
+const int lineToBackWall3 = 1500;        // block 3
+const int lineToBackWall4 = 1800;        // block 4
 
-// Distances in open area
+// TOF Distances in open area
 const int sideWallDistance = 300;
-const int backWallDistance = 510;                   // value between back wall and front face of block
-const int leaveWallDistance = 2000;
-const int sensorWheelDistance = 700;
+const int backWallDistance3 = 500;                   // value between back wall and front face of block
+const int backWallDistance4 = 515;                   // value between back wall and front face of block
+const int leaveWallDistance = 2300;
+const int sensorWheelDistance = 2000;                
 
 // Set line sensors to input pins
 int lineleftPin = 2;
@@ -99,18 +95,19 @@ int routePtr;
 // Set speed constants
 const int HighSpeed = 250;            // adjustment on straight line
 const int NormalSpeed = 200;          // straight line
-const int LowSpeed = 50;               // adjustment on straight line
+const int LowSpeed = 0;               // adjustment on straight line
 const int RotationSpeed = 180;        // rotation
 const int OpenAreaSpeed = 100;        // slow speed in open area
 
 // Junction to outpost (green red area) time in milliseconds
-int junctionOutpostTime = 250 / NormalSpeed * 1000; // change arbitrary constant '400' // Higher normal speed means shorter time 
+int junctionOutpostTimeStraight = 950; 
+int junctionOutpostTimeTurn = 1200; 
 
 // Junction to finish box time in milliseconds
-int junctionFinishTime = 200 / NormalSpeed * 1000;
+int junctionFinishTime = 900;
 
 // Leave junction time (make sure junction is not detected twice)
-int leaveJunctionTime = 300;
+int leaveJunctionTime = 350;
 
 // functions
 void updaterightmotorspeed(int NewRightMotorSpeed);
@@ -121,6 +118,7 @@ void stopmoving();
 void rotateright90degrees();
 void gostraight();
 void forwardawhile(int time);
+void backwardawhile(int time);
 void findandapproachblock();
 void returntoline();
 void routefollow(const char route[], int numberOfJunctions);

@@ -29,8 +29,8 @@ void updatelinesensors() {
 }
 
 void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 1 character
-                                              // Direction == "R" means turn right, "L" means left, "S" (or other char) means straight line
-    Serial.println("junction rotation");
+                                              // Direction == "R" means turn right, "L" means left, "S" means straight line
+    // Serial.println("junction rotation");
     
     updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
     updaterightmotorspeed(RotationSpeed);
@@ -46,11 +46,10 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
       motor_right->run(FORWARD);
       forwardawhile(leaveJunctionTime);         // make sure robot leaves junction by some distance
       return;
-    } else if (Direction == '\0'){    // reaches the end (null terminator) of the input character // NOT SURE IF ITS CORRECT
+    } else if (Direction == '\0'){    // reaches the end (null terminator) of the input character
       stopmoving();       
       return;
     } else {
-      // Serial.println("BAD INPUT");
       while (1) {
         stopmoving();
       }
@@ -58,29 +57,24 @@ void junctionrotation(char Direction[2]) {    // C++ requires 2 spaces to store 
     
     // rotate until both of the front sensors detect the side branch
     while (valLeft == 1 || valRight == 1) {    // rotate until front sensors are both black
-      // Serial.println("Rotating until front sensors are both black");
-
-      valLeft = digitalRead(lineleftPin); // read left input value
-      valRight = digitalRead(linerightPin); // read right input value
+      valLeft = digitalRead(lineleftPin);
+      valRight = digitalRead(linerightPin);
       delay(5);
     }
 
     while (valLeft == 0 || valRight == 0) {   // rotate until front sensors are both white
-      // Serial.println("Rotating until front sensors are both white");
-      valLeft = digitalRead(lineleftPin); // read left input value
-      valRight = digitalRead(linerightPin); // read right input value
+      valLeft = digitalRead(lineleftPin);
+      valRight = digitalRead(linerightPin);
       delay(5);
     }
 
     forwardawhile(leaveJunctionTime);                     // make sure robot leaves junction by some distance
 
-    valSideRight = digitalRead(lineSideRightPin); // read side right input value
-    valSideLeft = digitalRead(lineSideLeftPin); // read side right input value
+    valSideRight = digitalRead(lineSideRightPin);
+    valSideLeft = digitalRead(lineSideLeftPin);
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     stopmoving();
-
-    // Serial.println("Arrived side branch");
 
 }
 
@@ -94,7 +88,7 @@ void stopmoving() {
 
 void rotateright90degrees() {
     Serial.println("Rotate right");
-    updateleftmotorspeed(RotationSpeed);      // set constant rotate speed
+    updateleftmotorspeed(RotationSpeed);
     updaterightmotorspeed(RotationSpeed);
     motor_left->run(FORWARD);
     motor_right->run(BACKWARD);
@@ -102,9 +96,8 @@ void rotateright90degrees() {
     updatelinesensors();
 
     while (valSideLeft == 0 && valSideRight == 0) {   // rotate until side sensors are both white
-      // Serial.println("Rotating until front sensors are both white");
-      valSideLeft = digitalRead(lineSideLeftPin); // read left input value
-      valSideRight = digitalRead(lineSideRightPin); // read right input value
+      valSideLeft = digitalRead(lineSideLeftPin);
+      valSideRight = digitalRead(lineSideRightPin);
       delay(5);
       Serial.println("not yet reach target");
     }
@@ -114,8 +107,7 @@ void rotateright90degrees() {
     delay(30);
 }
 
-void gostraight() {   // walk in straight line
-  Serial.println("go straight");
+void gostraight() {   // walk in straight line, line following
   updatelinesensors();
   currentLEDMillis = millis();      // update millis for blinking
 
@@ -126,7 +118,6 @@ void gostraight() {   // walk in straight line
   }
 
   if(valLeft == 1 && valRight == 1) { // both white
-    // Serial.println("Go straight");
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);  
     if (inOpenArea == 1) {                     // in open area, detecting block while following white line
@@ -138,20 +129,16 @@ void gostraight() {   // walk in straight line
     }
 
   } else if(valLeft == 0 && valRight == 1) { // left is black right is white
-    // Serial.println("Turn right");
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     updateleftmotorspeed(HighSpeed);
     updaterightmotorspeed(LowSpeed);
-    // Serial.println(*LeftMotorSpeedPter);
 
   } else if(valLeft == 1 && valRight == 0) { // left is white right is black
-    // Serial.println("Turn left");
     motor_left->run(FORWARD);
     motor_right->run(FORWARD);
     updateleftmotorspeed(LowSpeed);
     updaterightmotorspeed(HighSpeed);
-    // Serial.println(*LeftMotorSpeedPter);
 
   } else { // both black
     motor_left->run(FORWARD);
@@ -168,7 +155,6 @@ void gostraight() {   // walk in straight line
 }
 
 void forwardawhile(int time) {
-    Serial.println("forward a while");
     unsigned long currentMotorMillis = millis();
     unsigned long startMotorMillis = millis();
     while((currentMotorMillis - startMotorMillis) < time) {
@@ -178,26 +164,69 @@ void forwardawhile(int time) {
     stopmoving(); 
 }
 
+
+void backwardawhile(int time) {
+    unsigned long currentMotorMillis = millis();
+    unsigned long startMotorMillis = millis();
+    while((currentMotorMillis - startMotorMillis) < time) {
+      currentMotorMillis = millis();
+      updatelinesensors();
+      currentLEDMillis = millis();      // update millis for blinking
+
+      if(currentLEDMillis - startLEDMillis > 250) {             // 250 ms --> 2 Hz blinking rate
+        blueLEDStatus = !blueLEDStatus;
+        digitalWrite(blueLED, blueLEDStatus);
+        startLEDMillis = millis();
+      }
+
+      motor_left->run(BACKWARD);
+      motor_right->run(BACKWARD);  
+      updateleftmotorspeed(NormalSpeed); 
+      updaterightmotorspeed(NormalSpeed);
+      delay(10);        // we need delay for the motor to respond
+    }
+    stopmoving(); 
+}
+
 void findandapproachblock() {
   inOpenArea = 1;         // tells gostraight() that we are in open area so need to move slowly
   int tofDistance = sensor.getDistance();
 
-  while (tofDistance > sideWallDistance) {         //x: distance of wall, to be tested
+  while (tofDistance > sideWallDistance) {
     gostraight();
     tofDistance = sensor.getDistance();
   }
   stopmoving();   // indicates wall detected
-  delay(1000);
+  delay(500);
+
+  // comment this part if we ignore block detection
   forwardawhile(leaveWallDistance);                // leave wall by a sufficient distance (moves slowly)
   tofDistance = sensor.getDistance();
-  while (tofDistance > backWallDistance) {         //y: distance of back wall of building minus block
-    gostraight();
-    tofDistance = sensor.getDistance();
+  if (blockNumber == 2) {
+    while (tofDistance > backWallDistance3) { 
+      gostraight();
+      tofDistance = sensor.getDistance();
+    }
+  } else if (blockNumber == 3) {
+    while (tofDistance > backWallDistance4) {
+      gostraight();
+      tofDistance = sensor.getDistance();
+    }
   }
-  forwardawhile(sensorWheelDistance);    // (to be tested) distance between sensor and center of rotation
+
+  forwardawhile(sensorWheelDistance);    // distance between sensor and center of rotation
+  // comment this part if we ignore block detection
+
+  // forwardawhile(6400);    // hard code block detection
+  
   rotateright90degrees();
   inOpenArea = 0;
-  forwardawhile(lineToBackWall);   // goes forward until reach back wall  
+  
+  if (blockNumber == 2) {                // go forward for a certain distance according to the area
+    forwardawhile(lineToBackWall3);
+  } else if (blockNumber == 3) {
+    forwardawhile(lineToBackWall4);
+  }
 }
 
 void returntoline() {
@@ -229,16 +258,14 @@ void routefollow(const char route[], int numberOfJunctions) {
   }
 
   if (pickup) {
-    forwardawhile(junctionOutpostTime);
+    if (blockNumber == 1) {
+      forwardawhile(junctionOutpostTimeTurn);
+    } else {
+      forwardawhile(junctionOutpostTimeStraight);
+    }
+    
   } else if ((blockNumber == 0 || blockNumber == 1) && !pickup) {
-    // // search for end of line
-    // while (valLeft == 1 || valRight == 1) {           // stops at the end of route where both front sensors detect black
-    //   gostraight();                                   
-    // } 
-    // delay(80);                                       // make sure it goes further away from the white line
-    // stopmoving(); 
-
-    forwardawhile(700);
+    forwardawhile(1100);             // leaves junction right before block 1 and block 2 for some distance     // CHANGE THIS
   } else if ((blockNumber == 4) && !pickup) {
     // stop at finish box
     forwardawhile(junctionFinishTime);
@@ -248,21 +275,3 @@ void routefollow(const char route[], int numberOfJunctions) {
 
 
 }
-
-// void liftblock() {
-//   pickup = 1;
-//   Serial.print("lift block");
-//   return;
-// }
-
-// void release() {
-//   pickup = 0;
-//   Serial.println("release block");
-//   return;
-// }
-
-// void identifyblock() {
-//   blockNumber += 1;
-//   blockType = 0;
-//   return;
-// }
